@@ -10,34 +10,6 @@ const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
-    console.log("Login button clicked");
-    try {
-      const response = await fetch("http://localhost:3001/supabase-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail);
-      }
-
-      const data = await response.json();
-      const token = data.access_token;
-
-      if (!token) {
-        throw new Error("No token received");
-      }
-
-      parent.postMessage({ pluginMessage: { type: "SAVE_TOKEN", token } }, "*");
-    } catch (error) {
-      console.error("Login error:", error);
-      alert(`Login failed: ${error}`);
-    }
-  };
-
   const handleInputChange = (
     e: h.JSX.TargetedEvent<HTMLInputElement, Event>
   ) => {
@@ -49,14 +21,48 @@ const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
     }
   };
 
+  const handleLogin = async () => {
+    console.log("Login button clicked");
+    try {
+      const response = await fetch("http://localhost:3001/supabase-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      console.log("Response received:", response);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Login data:", data);
+
+      const token = data.access_token;
+
+      if (!token) {
+        throw new Error("No token received");
+      }
+
+      console.log("Sending SAVE_TOKEN message");
+      parent.postMessage({ pluginMessage: { type: "SAVE_TOKEN", token } }, "*");
+
+      // setAuthToken은 TOKEN_SAVED 메시지를 받은 후에 호출됩니다.
+    } catch (error) {
+      console.error("Login error:", error);
+      alert(`Login failed: ${error}`);
+    }
+  };
+
   useEffect(() => {
-    // 메시지 리스너 추가
     const handleMessage = (event: MessageEvent) => {
       const { type, token } = event.data.pluginMessage;
       if (type === "TOKEN_SAVED") {
-        console.log("Token saved successfully");
+        console.log("TOKEN_SAVED message received");
         setAuthToken(token);
-        alert("Login successful!");
       }
     };
 

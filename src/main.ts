@@ -30,10 +30,10 @@ export default function () {
   });
 
   on<SaveTokenHandler>("SAVE_TOKEN", async function (token: string) {
-    console.log("SAVE_TOKEN received");
+    console.log("SAVE_TOKEN received in main.ts");
     try {
       await figma.clientStorage.setAsync("authToken", token);
-      console.log("Token saved successfully");
+      console.log("Token saved successfully in main.ts");
       figma.ui.postMessage({ type: "TOKEN_SAVED", token });
     } catch (error) {
       console.error("Error saving token:", error);

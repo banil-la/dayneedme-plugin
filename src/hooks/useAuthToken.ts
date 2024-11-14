@@ -12,14 +12,17 @@ export function useAuthToken(): [
     emit("LOAD_TOKEN");
 
     const handleLoadedToken = (token: string | null) => {
+      console.log("LOADED_TOKEN received:", token);
       setAuthTokenState(token);
     };
 
-    const handleTokenSaved = () => {
-      emit("LOAD_TOKEN");
+    const handleTokenSaved = (token: string) => {
+      console.log("TOKEN_SAVED received:", token);
+      setAuthTokenState(token);
     };
 
     const handleTokenDeleted = () => {
+      console.log("TOKEN_DELETED received");
       setAuthTokenState(null);
     };
 
@@ -35,10 +38,13 @@ export function useAuthToken(): [
   }, []);
 
   const setAuthToken = (token: string | null) => {
+    console.log("setAuthToken called with:", token);
     setAuthTokenState(token);
     if (token) {
+      console.log("Sending SAVE_TOKEN message");
       emit("SAVE_TOKEN", token);
     } else {
+      console.log("Sending DELETE_TOKEN message");
       emit("DELETE_TOKEN");
     }
   };
