@@ -1,3 +1,4 @@
+// types.ts
 import { EventHandler } from "@create-figma-plugin/utilities";
 
 export interface ResizeWindowHandler extends EventHandler {
@@ -5,22 +6,22 @@ export interface ResizeWindowHandler extends EventHandler {
   handler: (windowSize: { width: number; height: number }) => void;
 }
 
-export interface LoadTokenHandler {
+export interface LoadTokenHandler extends EventHandler {
   name: "LOAD_TOKEN";
   handler: () => void;
 }
 
-export interface SaveTokenHandler {
+export interface SaveTokenHandler extends EventHandler {
   name: "SAVE_TOKEN";
   handler: (token: string) => void;
 }
 
-export interface DeleteTokenHandler {
+export interface DeleteTokenHandler extends EventHandler {
   name: "DELETE_TOKEN";
   handler: () => void;
 }
 
-export interface GetShareLinkHandler {
+export interface GetShareLinkHandler extends EventHandler {
   name: "GET_SHARE_LINK";
   handler: () => void;
 }

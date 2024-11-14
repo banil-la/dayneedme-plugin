@@ -2,14 +2,17 @@
 import { useState, useEffect } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
 
-export function useAuthToken() {
-  const [authToken, setAuthToken] = useState<string | null>(null);
+export function useAuthToken(): [
+  string | null,
+  (token: string | null) => void
+] {
+  const [authToken, setAuthTokenState] = useState<string | null>(null);
 
   useEffect(() => {
     emit("LOAD_TOKEN");
 
     const handleLoadedToken = (token: string | null) => {
-      setAuthToken(token);
+      setAuthTokenState(token);
     };
 
     const handleTokenSaved = () => {
@@ -17,17 +20,28 @@ export function useAuthToken() {
     };
 
     const handleTokenDeleted = () => {
-      setAuthToken(null);
+      setAuthTokenState(null);
     };
 
-    on("LOADED_TOKEN", handleLoadedToken);
-    on("TOKEN_SAVED", handleTokenSaved);
-    on("TOKEN_DELETED", handleTokenDeleted);
+    const loadedTokenUnsubscribe = on("LOADED_TOKEN", handleLoadedToken);
+    const tokenSavedUnsubscribe = on("TOKEN_SAVED", handleTokenSaved);
+    const tokenDeletedUnsubscribe = on("TOKEN_DELETED", handleTokenDeleted);
 
     return () => {
-      // Clean up listeners
+      loadedTokenUnsubscribe();
+      tokenSavedUnsubscribe();
+      tokenDeletedUnsubscribe();
     };
   }, []);
 
-  return [authToken, setAuthToken] as const;
+  const setAuthToken = (token: string | null) => {
+    setAuthTokenState(token);
+    if (token) {
+      emit("SAVE_TOKEN", token);
+    } else {
+      emit("DELETE_TOKEN");
+    }
+  };
+
+  return [authToken, setAuthToken];
 }

@@ -3,7 +3,7 @@ import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 
 interface LoggedOutProps {
-  setAuthToken: React.Dispatch<React.SetStateAction<string | null>>;
+  setAuthToken: (token: string | null) => void;
 }
 
 const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
@@ -11,38 +11,30 @@ const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
+    console.log("Login button clicked");
     try {
-      const response = await fetch(
-        // "https://py-prod-adot.vercel.app/supabase-login",
-        "http://localhost:3001/supabase-login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch("http://localhost:3001/supabase-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        alert(`Login failed: ${error.detail}`);
-        return;
+        throw new Error(error.detail);
       }
 
       const data = await response.json();
       const token = data.access_token;
 
-      if (token) {
-        // SAVE_TOKEN 메시지 전송
-        parent.postMessage(
-          { pluginMessage: { type: "SAVE_TOKEN", token } },
-          "*"
-        );
-      } else {
-        alert("Login failed: No token received.");
+      if (!token) {
+        throw new Error("No token received");
       }
+
+      parent.postMessage({ pluginMessage: { type: "SAVE_TOKEN", token } }, "*");
     } catch (error) {
-      console.error("Error logging in:", error);
-      alert("Failed to log in.");
+      console.error("Login error:", error);
+      alert(`Login failed: ${error}`);
     }
   };
 

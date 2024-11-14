@@ -42,12 +42,14 @@ export default function () {
   });
 
   on<DeleteTokenHandler>("DELETE_TOKEN", async function () {
-    console.log("DELETE_TOKEN");
+    console.log("DELETE_TOKEN received");
     try {
       await figma.clientStorage.deleteAsync("authToken");
-      emit("TOKEN_DELETED");
+      console.log("Token deleted successfully");
+      figma.ui.postMessage({ type: "TOKEN_DELETED" });
     } catch (error) {
       console.error("Error deleting token:", error);
+      figma.ui.postMessage({ type: "TOKEN_DELETE_ERROR", error: error });
     }
   });
 
