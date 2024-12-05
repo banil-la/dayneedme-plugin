@@ -1,4 +1,4 @@
-# Figma 플러그인과 Supabase 및 Python 백엔드
+# Supabase 연동 Figma 플러그인
 
 ## 개요
 
@@ -41,37 +41,7 @@ ui.tsx
 
 ---
 
-### **Python FastAPI 백엔드**
-
-- **프레임워크:** FastAPI로 구축.
-- **목적:** Supabase 서비스 및 기타 외부 API와 안전하게 통신하는 중개 역할.
-
-#### **디렉터리 구조**
-
-```
-api/
-| - service/
-|    | - figma/
-|    |    | - share.py
-|    | - auth.py
-|    | - vision.py
-| - index.py
-```
-
-- **`index.py`**: FastAPI 서버의 주요 진입점.
-- **`service/auth.py`**: Supabase 인증 관리.
-- **`service/figma/share.py`**: URL 단축 및 Supabase 데이터베이스 상호작용 처리.
-- **`service/vision.py`**: (구현 예정) Google Vision API를 사용한 앱 화면 분석.
-
-#### **주요 기능**
-
-1. **인증 프록시:** 플러그인의 로그인 요청을 Supabase로 안전하게 전달.
-2. **짧은 URL 생성:** Supabase를 사용하여 짧은 URL 생성.
-3. **CORS 관리:** 로컬 및 프로덕션 환경에 따른 CORS 정책 설정.
-
----
-
-## 워크플로우
+## 주요 기능
 
 1. **사용자 로그인:**
 
@@ -92,6 +62,109 @@ api/
 
 ---
 
+## 개발 과정
+
+### **UI 컴포넌트와 main.ts**의 통신 방식
+
+- UI 컴포넌트와 main.ts의 통신으로 플러그인이 동작.
+- Create Figma Plugin 프레임워크에서 제공하는 `emit`과 `on` 유틸리티를 통해 통신
+
+#### 1. UI 컴포넌트
+
+- **`emit`** : UI에서 main.ts로 메시지 전송
+- **이벤트 리스너**: main.ts에서 `on` 또는 `window.addEventListener`를 사용해 메시지 수신
+
+#### 2. main.ts
+
+- **`on`** : UI에서 보낸 메시지 수신
+- **`emit`** : UI로 응답 전송
+
+### 새 기능 추가 방법
+
+#### 1. 새 메시지 타입 정의
+
+- 새로운 기능의 데이터 구조와 메시지 타입을 `types.ts` 파일에 정의
+- 이를 통해 UI와 메인 프로세스 간의 통신을 일관되게 유지
+
+```typescript
+export interface GeneratePreviewHandler {
+  type: "GENERATE_PREVIEW";
+  payload: { frameId: string };
+}
+
+export interface PreviewGeneratedHandler {
+  type: "PREVIEW_GENERATED";
+  payload: { previewUrl: string };
+}
+```
+
+#### 2. main.ts에서 메시지 처리
+
+- main.ts에서 UI가 보낸 메시지를 수신하고 처리하는 로직 추가.
+
+```
+import { emit, on } from "@create-figma-plugin/utilities";
+
+on("GENERATE_PREVIEW", async ({ frameId }: { frameId: string }) => {
+  console.log("GENERATE_PREVIEW 수신됨, frameId:", frameId);
+
+  try {
+    const node = figma.getNodeById(frameId);
+    if (!node || node.type !== "FRAME") {
+      throw new Error("선택된 노드가 유효한 프레임이 아닙니다.");
+    }
+
+    // 예시: 프리뷰 URL 생성 (실제 로직으로 대체 필요)
+    const previewUrl = `https://preview-service.com/preview/${frameId}`;
+
+    console.log("프리뷰 생성됨:", previewUrl);
+    emit("PREVIEW_GENERATED", { previewUrl });
+  } catch (error) {
+    console.error("프리뷰 생성 중 오류 발생:", error);
+    emit("PREVIEW_GENERATED", { previewUrl: null });
+  }
+});
+```
+
+#### 3. UI 컴포넌트 업데이트
+
+- UI컴포넌트를 수정하고 main.ts로 다시 메시지를 보내 응답
+
+```
+import { h } from "preact";
+import { useState } from "preact/hooks";
+import { emit, on } from "@create-figma-plugin/utilities";
+
+const LoggedIn = () => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleGeneratePreview = () => {
+    console.log("프리뷰 생성 요청 중...");
+    emit("GENERATE_PREVIEW", { frameId: "selected-frame-id" }); // 실제 프레임 ID로 대체 필요
+  };
+
+  on("PREVIEW_GENERATED", ({ previewUrl }: { previewUrl: string }) => {
+    console.log("프리뷰 URL 수신됨:", previewUrl);
+    setPreviewUrl(previewUrl);
+  });
+
+  return (
+    <div>
+      <button onClick={handleGeneratePreview}>프리뷰 생성</button>
+      {previewUrl && (
+        <p>
+          프리뷰 URL: <a href={previewUrl}>{previewUrl}</a>
+        </p>
+      )}
+    </div>
+  );
+};
+
+export default LoggedIn;
+```
+
+---
+
 ## 환경 변수
 
 Python 백엔드를 실행하려면 다음 환경 변수가 필요합니다:
@@ -102,41 +175,3 @@ Python 백엔드를 실행하려면 다음 환경 변수가 필요합니다:
 - **`ENVIRONMENT`**: `local` 또는 `production` (CORS 정책을 결정).
 
 `api/` 디렉터리에 `.env` 파일을 생성하고 위 변수들을 추가하세요.
-
----
-
-## 배포
-
-### **Figma 플러그인**
-
-1. `create-figma-plugin` CLI를 사용하여 플러그인을 빌드.
-2. Figma 개발자 콘솔을 통해 플러그인을 게시.
-
-### **Python 백엔드**
-
-1. 클라우드 제공자(e.g., Vercel)에 백엔드를 배포.
-2. `vercel.json` 파일을 다음과 같이 구성:
-
-   ```json
-   {
-     "version": 2,
-     "builds": [
-       {
-         "src": "api/index.py",
-         "use": "@vercel/python"
-       }
-     ],
-     "routes": [
-       {
-         "src": "/(.*)",
-         "dest": "api/index.py"
-       }
-     ]
-   }
-   ```
-
-3. Vercel 대시보드에서 환경변수 설정
-
----
-
-ㅇ

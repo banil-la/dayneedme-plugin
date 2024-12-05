@@ -558,8 +558,16 @@ video {
   position: fixed;
 }
 
+.flex {
+  display: flex;
+}
+
 .resize {
   resize: both;
+}
+
+.flex-col {
+  flex-direction: column;
 }
 
 .bg-red-400 {

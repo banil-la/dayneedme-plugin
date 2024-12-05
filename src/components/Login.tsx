@@ -1,16 +1,13 @@
-// components/LoggedOut.tsx
-
-import { emit } from "@create-figma-plugin/utilities";
+import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
+import { useAuth } from "../context/AuthContext";
 
-interface LoggedOutProps {
-  setAuthToken: (token: string | null) => void;
-}
-
-const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
+const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const { setAuthToken } = useAuth();
 
   const handleInputChange = (
     e: h.JSX.TargetedEvent<HTMLInputElement, Event>
@@ -32,55 +29,33 @@ const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      console.log("Response received:", response);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(errorText || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("Login response data:", data);
-
-      console.log("Server response:", data);
       const token = data.access_token;
-      console.log("Extracted token:", token);
 
       if (!token) {
         throw new Error("No token received");
       }
 
-      // console.log("Sending SAVE_TOKEN message");
-      // parent.postMessage({ pluginMessage: { type: "SAVE_TOKEN", token } }, "*");
-
-      // emit 함수를 사용하여 일관성 있게 메시지 전달
       emit("SAVE_TOKEN", token);
       console.log("Sending SAVE_TOKEN message with token:", token);
-
-      // setAuthToken은 TOKEN_SAVED 메시지를 받은 후에 호출됩니다.
     } catch (error) {
       console.error("Login error:", error);
-      alert(`Login failed: ${error}`);
+      setError(JSON.stringify(error));
     }
   };
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const { type, token } = event.data.pluginMessage;
-      console.log(
-        "Received pluginMessage in LoggedOut:",
-        event.data.pluginMessage
-      );
+    const unsubscribe = on("TOKEN_SAVED", (token: string) => {
+      console.log("TOKEN_SAVED message received in Login");
+      setAuthToken(token);
+    });
 
-      if (type === "TOKEN_SAVED") {
-        console.log("TOKEN_SAVED message received in LoggedOut");
-        setAuthToken(token);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    return unsubscribe;
   }, [setAuthToken]);
 
   return (
@@ -98,8 +73,9 @@ const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
         onChange={handleInputChange}
       />
       <button onClick={handleLogin}>Login</button>
+      {error && <p class="error">{error}</p>}
     </div>
   );
 };
 
-export default LoggedOut;
+export default Login;
