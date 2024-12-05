@@ -1,3 +1,5 @@
+// components/LoggedIn.tsx
+
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import copyToClipboard from "../hooks/copyToClipboard";
@@ -42,7 +44,7 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
   const handleShareLink = async (figmaUrl: string) => {
     console.log("Figma URL:", figmaUrl);
     try {
-      const response = await fetch("http://localhost:3001/create-short-url", {
+      const response = await fetch("http://localhost:8080/create-short-url", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,6 +79,9 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
     console.log("Sending GET_SHARE_LINK message");
     parent.postMessage({ pluginMessage: { type: "GET_SHARE_LINK" } }, "*");
   };
+  useEffect(() => {
+    console.log("LoggedIn: Component mounted with authToken:", authToken);
+  }, [authToken]);
 
   const handleLogout = () => {
     console.log("Logout button clicked");
@@ -85,6 +90,9 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
 
   return (
     <div>
+      <p>Logged in with token: {authToken}</p>
+      <button onClick={handleLogout}>Logout</button>
+
       <button onClick={handleGenerateShortUrl} disabled={isLoading}>
         {isLoading ? "Generating..." : "Generate Short URL"}
       </button>
@@ -93,7 +101,6 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
           Short URL: <a href={shortUrl}>{shortUrl}</a>
         </p>
       )}
-      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 };

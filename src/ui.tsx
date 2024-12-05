@@ -13,6 +13,7 @@ function Plugin() {
   const [authToken, setAuthToken] = useAuthToken();
   function onWindowResize(windowSize: { width: number; height: number }) {
     emit<ResizeWindowHandler>("RESIZE_WINDOW", windowSize);
+    emit("DEBUG_CLIENT_STORAGE");
   }
   useWindowResize(onWindowResize, {
     maxHeight: plugin.size.max.height,
@@ -23,7 +24,7 @@ function Plugin() {
   });
   return (
     <div className="app-container">
-      <p>{authToken ? "authorized" : "not"}</p>
+      <p className="uppercase">{authToken ? "authorized" : "not authorized"}</p>
       {authToken ? (
         <LoggedIn authToken={authToken} setAuthToken={setAuthToken} />
       ) : (

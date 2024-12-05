@@ -1,4 +1,5 @@
 // hooks/useAuthToken.ts
+
 import { useState, useEffect } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
 
@@ -9,42 +10,48 @@ export function useAuthToken(): [
   const [authToken, setAuthTokenState] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("useAuthToken: Initializing and emitting LOAD_TOKEN");
     emit("LOAD_TOKEN");
 
-    const handleLoadedToken = (token: string | null) => {
-      console.log("LOADED_TOKEN received:", token);
-      setAuthTokenState(token);
+    const handleMessage = (event: MessageEvent) => {
+      const { type, token, error } = event.data.pluginMessage;
+      console.log(
+        "Received pluginMessage in useAuthToken:",
+        event.data.pluginMessage
+      );
+
+      switch (type) {
+        case "LOADED_TOKEN":
+          console.log("useAuthToken: LOADED_TOKEN received:", token);
+          setAuthTokenState(token);
+          break;
+        case "TOKEN_SAVED":
+          console.log("useAuthToken: TOKEN_SAVED received:", token);
+          setAuthTokenState(token);
+          break;
+        case "TOKEN_DELETED":
+          console.log("useAuthToken: TOKEN_DELETED received");
+          setAuthTokenState(null);
+          break;
+        case "TOKEN_SAVE_ERROR":
+        case "TOKEN_LOAD_ERROR":
+        case "TOKEN_DELETE_ERROR":
+          console.error(`useAuthToken: Error - ${type}:`, error);
+          break;
+      }
     };
 
-    const handleTokenSaved = (token: string) => {
-      console.log("TOKEN_SAVED received:", token);
-      setAuthTokenState(token);
-    };
-
-    const handleTokenDeleted = () => {
-      console.log("TOKEN_DELETED received");
-      setAuthTokenState(null);
-    };
-
-    const loadedTokenUnsubscribe = on("LOADED_TOKEN", handleLoadedToken);
-    const tokenSavedUnsubscribe = on("TOKEN_SAVED", handleTokenSaved);
-    const tokenDeletedUnsubscribe = on("TOKEN_DELETED", handleTokenDeleted);
-
-    return () => {
-      loadedTokenUnsubscribe();
-      tokenSavedUnsubscribe();
-      tokenDeletedUnsubscribe();
-    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   const setAuthToken = (token: string | null) => {
-    console.log("setAuthToken called with:", token);
-    setAuthTokenState(token);
+    console.log("useAuthToken: setAuthToken called with:", token);
     if (token) {
-      console.log("Sending SAVE_TOKEN message");
+      console.log("useAuthToken: Emitting SAVE_TOKEN event with token:", token);
       emit("SAVE_TOKEN", token);
     } else {
-      console.log("Sending DELETE_TOKEN message");
+      console.log("useAuthToken: Emitting DELETE_TOKEN event");
       emit("DELETE_TOKEN");
     }
   };
