@@ -1,17 +1,17 @@
-# Figma Plugin with Supabase and Python Backend
+# Figma 플러그인과 Supabase 및 Python 백엔드
 
-## Overview
+## 개요
 
-This project integrates a Figma plugin with a Python FastAPI backend to provide seamless interaction with Supabase services for authentication and data management. The plugin leverages Supabase for user authentication and database access while using a Python server as a secure intermediary.
+이 프로젝트는 Dayneed.me의 데이터베이스를 Figma에서 사용하기 위한 플러그인 입니다.
 
-## Project Structure
+## 프로젝트 구조
 
-### **Figma Plugin Project**
+### **Figma 플러그인 프로젝트**
 
-- **Framework:** Built using the [Create Figma Plugin](https://yuanqing.github.io/create-figma-plugin/) framework.
-- **Purpose:** To allow Figma users to interact with a Supabase database and create short URLs for Figma frames.
+- **프레임워크:** [Create Figma Plugin](https://yuanqing.github.io/create-figma-plugin/) 기반으로 구축.
+- **목적:** Figma 사용자들이 Supabase 데이터베이스와 상호작용하고, Figma 프레임의 짧은 URL을 생성할 수 있도록 지원.
 
-#### **Directory Structure**
+#### **디렉터리 구조**
 
 ```
 src/
@@ -27,26 +27,26 @@ types.ts
 ui.tsx
 ```
 
-- **`main.ts`**: Main entry point for the plugin's backend logic.
-- **`ui.tsx`**: Manages the plugin UI, rendering login/logout states based on authentication.
-- **`components/LoggedIn.tsx`**: Handles functionality available to authenticated users (e.g., short URL generation).
-- **`components/LoggedOut.tsx`**: Handles user login.
-- **`hooks/useAuthToken.ts`**: Custom hook to manage authentication tokens.
+- **`main.ts`**: 플러그인의 주요 로직을 담당.
+- **`ui.tsx`**: 플러그인의 UI를 관리하며, 인증 상태에 따라 로그인/로그아웃 화면을 렌더링.
+- **`components/LoggedIn.tsx`**: 인증된 사용자를 위한 기능 처리(예: 짧은 URL 생성).
+- **`components/LoggedOut.tsx`**: 사용자 로그인 처리.
+- **`hooks/useAuthToken.ts`**: 인증 토큰 관리를 위한 커스텀 훅.
 
-#### **Key Features**
+#### **주요 기능**
 
-1. **Login:** Authenticates users with their email and password via Supabase.
-2. **Token Management:** Saves, loads, and deletes authentication tokens using Figma's client storage.
-3. **Short URL Generation:** Allows users to generate short URLs for selected Figma frames.
+1. **로그인:** Supabase를 통해 이메일 및 비밀번호로 사용자 인증.
+2. **토큰 관리:** Figma의 클라이언트 스토리지를 사용하여 인증 토큰 저장, 로드, 삭제.
+3. **짧은 URL 생성:** 선택한 Figma 프레임의 짧은 URL 생성.
 
 ---
 
-### **Python FastAPI Backend**
+### **Python FastAPI 백엔드**
 
-- **Framework:** Built with FastAPI.
-- **Purpose:** Acts as an intermediary to securely communicate with Supabase services and other external APIs.
+- **프레임워크:** FastAPI로 구축.
+- **목적:** Supabase 서비스 및 기타 외부 API와 안전하게 통신하는 중개 역할.
 
-#### **Directory Structure**
+#### **디렉터리 구조**
 
 ```
 api/
@@ -58,64 +58,64 @@ api/
 | - index.py
 ```
 
-- **`index.py`**: Main entry point for the FastAPI server.
-- **`service/auth.py`**: Manages Supabase authentication.
-- **`service/figma/share.py`**: Handles URL shortening and Supabase database interactions.
-- **`service/vision.py`**: (Placeholder) Implements Google Vision API integration for app screen analysis.
+- **`index.py`**: FastAPI 서버의 주요 진입점.
+- **`service/auth.py`**: Supabase 인증 관리.
+- **`service/figma/share.py`**: URL 단축 및 Supabase 데이터베이스 상호작용 처리.
+- **`service/vision.py`**: (구현 예정) Google Vision API를 사용한 앱 화면 분석.
 
-#### **Key Features**
+#### **주요 기능**
 
-1. **Authentication Proxy:** Facilitates secure login requests from the plugin to Supabase.
-2. **Short URL Creation:** Generates short URLs using Supabase.
-3. **CORS Management:** Configures CORS policies for local and production environments.
-
----
-
-## Workflow
-
-1. **User Login:**
-
-   - The user enters their email and password in the plugin.
-   - The plugin sends the credentials to the Python backend (`/supabase-login`).
-   - The backend authenticates the user via Supabase and returns an access token.
-
-2. **Token Management:**
-
-   - The plugin saves the access token locally using `figma.clientStorage`.
-   - The token is used for subsequent authenticated requests.
-
-3. **Short URL Generation:**
-
-   - The user selects a frame in Figma and clicks "Generate Short URL."
-   - The plugin generates a Figma URL for the selected frame and sends it to the Python backend (`/create-short-url`).
-   - The backend creates a short URL using Supabase and returns it to the plugin.
+1. **인증 프록시:** 플러그인의 로그인 요청을 Supabase로 안전하게 전달.
+2. **짧은 URL 생성:** Supabase를 사용하여 짧은 URL 생성.
+3. **CORS 관리:** 로컬 및 프로덕션 환경에 따른 CORS 정책 설정.
 
 ---
 
-## Environment Variables
+## 워크플로우
 
-The following environment variables are required for the Python backend:
+1. **사용자 로그인:**
 
-- **`SUPABASE_URL`**: The base URL of your Supabase project.
-- **`SUPABASE_KEY`**: The API key for your Supabase project.
-- **`SERVICE_ACCOUNT_FILE_BASE64`**: A Base64-encoded string of your Google Cloud service account JSON.
-- **`ENVIRONMENT`**: `local` or `production` (determines CORS policies).
+   - 사용자가 플러그인에서 이메일과 비밀번호를 입력.
+   - 플러그인이 Python 백엔드(`/supabase-login`)로 인증 요청을 전송.
+   - 백엔드가 Supabase를 통해 사용자를 인증하고, 액세스 토큰을 반환.
 
-Create a `.env` file in the `api/` directory and add these variables.
+2. **토큰 관리:**
+
+   - 플러그인이 인증 토큰을 Figma의 `clientStorage`에 저장.
+   - 이후 인증이 필요한 요청에서 해당 토큰을 사용.
+
+3. **짧은 URL 생성:**
+
+   - 사용자가 Figma에서 프레임을 선택하고 "Generate Short URL" 버튼 클릭.
+   - 플러그인이 선택된 프레임의 Figma URL을 생성하여 Python 백엔드(`/create-short-url`)로 전송.
+   - 백엔드가 Supabase를 통해 짧은 URL을 생성하고 플러그인에 반환.
 
 ---
 
-## Deployment
+## 환경 변수
 
-### **Figma Plugin**
+Python 백엔드를 실행하려면 다음 환경 변수가 필요합니다:
 
-1. Build the plugin using the `create-figma-plugin` CLI.
-2. Publish the plugin through the Figma developer console.
+- **`SUPABASE_URL`**: Supabase 프로젝트의 기본 URL.
+- **`SUPABASE_KEY`**: Supabase 프로젝트의 API 키.
+- **`SERVICE_ACCOUNT_FILE_BASE64`**: Google Cloud 서비스 계정 JSON 파일의 Base64 인코딩 문자열.
+- **`ENVIRONMENT`**: `local` 또는 `production` (CORS 정책을 결정).
 
-### **Python Backend**
+`api/` 디렉터리에 `.env` 파일을 생성하고 위 변수들을 추가하세요.
 
-1. Deploy the backend to a cloud provider (e.g., Vercel).
-2. Configure the `vercel.json` file for deployment:
+---
+
+## 배포
+
+### **Figma 플러그인**
+
+1. `create-figma-plugin` CLI를 사용하여 플러그인을 빌드.
+2. Figma 개발자 콘솔을 통해 플러그인을 게시.
+
+### **Python 백엔드**
+
+1. 클라우드 제공자(e.g., Vercel)에 백엔드를 배포.
+2. `vercel.json` 파일을 다음과 같이 구성:
 
    ```json
    {
@@ -135,95 +135,8 @@ Create a `.env` file in the `api/` directory and add these variables.
    }
    ```
 
-3. Set environment variables in the Vercel dashboard.
+3. Vercel 대시보드에서 환경변수 설정
 
 ---
 
-## Troubleshooting
-
-### **Common Issues**
-
-1. **Login Fails with `HTTP error! status: 500`:**
-
-   - Verify that Supabase credentials are correctly set in the backend.
-   - Check the backend logs for detailed error messages.
-
-2. **Plugin Not Switching to Logged-In State:**
-
-   - Ensure `TOKEN_SAVED` is properly handled in the plugin's event listeners.
-
-3. **CORS Errors:**
-
-   - Confirm that the CORS policies in `index.py` match the expected environment (local or production).
-
----
-
-## Future Enhancements
-
-1. **Enable Deployed Backend Integration:**
-
-   - Update the plugin's API endpoints to use the deployed server URL instead of `localhost`.
-
-2. **Improved Error Handling:**
-
-   - Implement more robust error messages in both the plugin and backend.
-
-3. **Expanded Features:**
-
-   - Add analytics for user actions.
-   - Implement additional integrations using Supabase database capabilities.
-
----
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-# Preact Resizable
-
-## Development guide
-
-_This plugin is built with [Create Figma Plugin](https://yuanqing.github.io/create-figma-plugin/)._
-
-### Pre-requisites
-
-- [Node.js](https://nodejs.org) – v20
-- [Figma desktop app](https://figma.com/downloads/)
-
-### Build the plugin
-
-To build the plugin:
-
-```
-$ npm run build
-```
-
-This will generate a [`manifest.json`](https://figma.com/plugin-docs/manifest/) file and a `build/` directory containing the JavaScript bundle(s) for the plugin.
-
-To watch for code changes and rebuild the plugin automatically:
-
-```
-$ npm run watch
-```
-
-### Install the plugin
-
-1. In the Figma desktop app, open a Figma document.
-2. Search for and run `Import plugin from manifest…` via the Quick Actions search bar.
-3. Select the `manifest.json` file that was generated by the `build` script.
-
-### Debugging
-
-Use `console.log` statements to inspect values in your code.
-
-To open the developer console, search for and run `Show/Hide Console` via the Quick Actions search bar.
-
-## See also
-
-- [Create Figma Plugin docs](https://yuanqing.github.io/create-figma-plugin/)
-- [`yuanqing/figma-plugins`](https://github.com/yuanqing/figma-plugins#readme)
-
-Official docs and code samples from Figma:
-
-- [Plugin API docs](https://figma.com/plugin-docs/)
-- [`figma/plugin-samples`](https://github.com/figma/plugin-samples#readme)
+ㅇ

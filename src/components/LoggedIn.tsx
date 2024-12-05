@@ -3,6 +3,7 @@
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import copyToClipboard from "../hooks/copyToClipboard";
+import { emit, on } from "@create-figma-plugin/utilities";
 
 interface LoggedInProps {
   authToken: string;
@@ -22,10 +23,15 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
 
       switch (pluginMessage.type) {
         case "SHARE_LINK":
+          console.log("Received SHARE_LINK:", pluginMessage.link);
           handleShareLink(pluginMessage.link);
           break;
         case "NO_FRAME_SELECTED":
           alert("Please select a frame to generate a share link.");
+          setIsLoading(false);
+          break;
+        case "SHARE_LINK_ERROR":
+          console.error("Error from SHARE_LINK:", pluginMessage.error);
           setIsLoading(false);
           break;
         case "TOKEN_DELETED":
@@ -73,12 +79,27 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
   };
 
   const handleGenerateShortUrl = () => {
-    console.log("Generate Short URL button clicked");
     setIsLoading(true);
     setShortUrl(null);
-    console.log("Sending GET_SHARE_LINK message");
-    parent.postMessage({ pluginMessage: { type: "GET_SHARE_LINK" } }, "*");
+    emit("GET_SHARE_LINK");
   };
+  useEffect(() => {
+    function handleShareLink(link: string) {
+      // handleShareLink 함수 내용
+    }
+
+    on("SHARE_LINK", handleShareLink);
+    on("NO_FRAME_SELECTED", () => {
+      alert("Please select a frame to generate a share link.");
+      setIsLoading(false);
+    });
+    // 다른 이벤트 리스너들도 유사하게 변경
+
+    return () => {
+      // 이벤트 리스너 제거
+    };
+  }, []);
+
   useEffect(() => {
     console.log("LoggedIn: Component mounted with authToken:", authToken);
   }, [authToken]);
@@ -89,7 +110,7 @@ const LoggedIn: React.FC<LoggedInProps> = ({ authToken, setAuthToken }) => {
   };
 
   return (
-    <div>
+    <div class={"text-base"}>
       <p>Logged in with token: {authToken}</p>
       <button onClick={handleLogout}>Logout</button>
 

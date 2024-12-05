@@ -9,8 +9,8 @@ interface LoggedOutProps {
 }
 
 const LoggedOut: React.FC<LoggedOutProps> = ({ setAuthToken }) => {
-  const [email, setEmail] = useState("junseok.kim.sk@gmail.com");
-  const [password, setPassword] = useState("Qkdltm0143!!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleInputChange = (
     e: h.JSX.TargetedEvent<HTMLInputElement, Event>
