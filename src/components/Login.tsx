@@ -26,11 +26,14 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     setError(null);
     try {
-      const response = await fetch("http://localhost:8080/supabase-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://py-prod-adot.vercel.app/supabase-login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();

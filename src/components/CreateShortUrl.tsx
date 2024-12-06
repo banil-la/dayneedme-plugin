@@ -18,14 +18,17 @@ const CreateShortUrl: React.FC = () => {
       console.log("[CreateShortUrl] Received Figma URL:", figmaUrl);
 
       try {
-        const response = await fetch("http://localhost:8080/create-short-url", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ url: figmaUrl }),
-        });
+        const response = await fetch(
+          "https://py-prod-adot.vercel.app/create-short-url",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({ url: figmaUrl }),
+          }
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
