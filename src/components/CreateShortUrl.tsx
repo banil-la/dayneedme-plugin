@@ -18,40 +18,31 @@ const CreateShortUrl: React.FC = () => {
       console.log("[CreateShortUrl] Received Figma URL:", figmaUrl);
 
       try {
-        // Send the URL to the backend to generate a short URL
         const response = await fetch("http://localhost:8080/create-short-url", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`, // Auth token included
+            Authorization: `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ url: figmaUrl }), // Send Figma URL as payload
+          body: JSON.stringify({ url: figmaUrl }),
         });
 
-        console.log("[CreateShortUrl] Backend response:", response);
-
         if (!response.ok) {
-          // If the response is not successful, handle the error
-          const error = await response.json();
-          throw new Error(error.detail || "Failed to create short URL");
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to create short URL");
         }
 
-        // Parse the backend's response
         const data = await response.json();
         console.log("[CreateShortUrl] Short URL created:", data.short_url);
-
-        // Update state with the new short URL
         setShortUrl(data.short_url);
-        copyToClipboard(data.short_url); // Copy the URL to clipboard
+        copyToClipboard(data.short_url);
         alert(`Short URL created and copied: ${data.short_url}`);
       } catch (error) {
-        // Error handling for failed requests
         console.error("[CreateShortUrl] Error creating short URL:", error);
         alert(
           `Error: ${JSON.stringify(error) || "Unable to create short URL"}`
         );
       } finally {
-        // Reset the loading state
         setIsLoading(false);
       }
     };
