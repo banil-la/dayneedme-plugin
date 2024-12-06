@@ -6,6 +6,14 @@ import { plugin } from "./constants";
 
 const TOKEN_KEY = "ACCESS_TOKEN";
 
+interface TokenObject {
+  access_token: string;
+}
+
+function isValidToken(token: any): token is string {
+  return typeof token === "string" && token.length > 0;
+}
+
 export default function () {
   // 윈도우 크기 조정
   on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
@@ -14,8 +22,23 @@ export default function () {
   });
 
   // 토큰 저장
-  on("SAVE_TOKEN", async (token: string) => {
+  on("SAVE_TOKEN", async (token: string | TokenObject) => {
     console.log("SAVE_TOKEN received with token:", token);
+    if (
+      typeof token === "object" &&
+      token !== null &&
+      "access_token" in token
+    ) {
+      // 객체에서 access_token 추출
+      token = token.access_token;
+    }
+    if (!isValidToken(token)) {
+      figma.ui.postMessage({
+        type: "TOKEN_SAVE_ERROR",
+        error: "Invalid token",
+      });
+      return;
+    }
     try {
       await figma.clientStorage.setAsync(TOKEN_KEY, token);
       console.log("Token saved successfully:");
@@ -24,7 +47,7 @@ export default function () {
       console.error("Error saving token:", error);
       figma.ui.postMessage({
         type: "TOKEN_SAVE_ERROR",
-        error: JSON.stringify(error),
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   });

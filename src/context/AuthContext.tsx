@@ -1,4 +1,4 @@
-// src/context/AuthContext.tsx
+// src/components/context/AuthContext.tsx
 
 import { createContext, h } from "preact";
 import { ComponentChildren } from "preact";
@@ -8,6 +8,7 @@ import { useAuthToken } from "../hooks/useAuthToken";
 interface AuthContextType {
   authToken: string | null;
   setAuthToken: (token: string | null) => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,14 +18,14 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [authToken, setAuthToken] = useAuthToken();
+  const [authToken, setAuthToken, isLoading] = useAuthToken();
 
   useEffect(() => {
     console.log("AuthProvider: authToken changed =", authToken);
   }, [authToken]);
 
   return (
-    <AuthContext.Provider value={{ authToken, setAuthToken }}>
+    <AuthContext.Provider value={{ authToken, setAuthToken, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
