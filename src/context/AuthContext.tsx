@@ -1,6 +1,8 @@
+// src/context/AuthContext.tsx
+
 import { createContext, h } from "preact";
 import { ComponentChildren } from "preact";
-import { useContext } from "preact/hooks";
+import { useContext, useEffect } from "preact/hooks";
 import { useAuthToken } from "../hooks/useAuthToken";
 
 interface AuthContextType {
@@ -16,6 +18,10 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authToken, setAuthToken] = useAuthToken();
+
+  useEffect(() => {
+    console.log("AuthProvider: authToken changed =", authToken);
+  }, [authToken]);
 
   return (
     <AuthContext.Provider value={{ authToken, setAuthToken }}>

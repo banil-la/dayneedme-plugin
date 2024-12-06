@@ -1,7 +1,10 @@
+// src/components/Login.tsx
+
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../context/AuthContext";
+import classNames from "classnames";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -21,7 +24,7 @@ const Login: React.FC = () => {
   };
 
   const handleLogin = async () => {
-    console.log("Login button clicked");
+    setError(null);
     try {
       const response = await fetch("http://localhost:8080/supabase-login", {
         method: "POST",
@@ -30,50 +33,64 @@ const Login: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Login failed");
       }
 
       const data = await response.json();
-      const token = data.access_token;
-
-      if (!token) {
+      if (!data.access_token) {
         throw new Error("No token received");
       }
 
-      emit("SAVE_TOKEN", token);
-      console.log("Sending SAVE_TOKEN message with token:", token);
+      emit("SAVE_TOKEN", {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      });
     } catch (error) {
-      console.error("Login error:", error);
       setError(JSON.stringify(error));
     }
   };
 
   useEffect(() => {
-    const unsubscribe = on("TOKEN_SAVED", (token: string) => {
-      console.log("TOKEN_SAVED message received in Login");
-      setAuthToken(token);
-    });
+    const unsubscribe = on(
+      "TOKEN_SAVED",
+      (tokens: { access_token: string; refresh_token: string }) => {
+        setAuthToken(tokens.access_token);
+        // 리프레시 토큰도 저장
+      }
+    );
 
     return unsubscribe;
   }, [setAuthToken]);
 
   return (
-    <div>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={handleInputChange}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={handleInputChange}
-      />
-      <button onClick={handleLogin}>Login</button>
-      {error && <p class="error">{error}</p>}
+    <div className="w-full h-full flex flex-col items-center justify-center bg-red-100">
+      <div className="flex flex-col gap-2 items-center justify-center">
+        <input
+          className="input input-sm border border-[#FF0000]"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={handleInputChange}
+        />
+        <input
+          className="input input-sm border border-black"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={handleInputChange}
+        />
+        <button
+          class={classNames(
+            "w-full btn btn-sm",
+            email.length > 0 && password.length > 0 && "btn-primary"
+          )}
+          onClick={handleLogin}
+        >
+          Login
+        </button>
+        {error && <p class="error">{error}</p>}
+      </div>
     </div>
   );
 };

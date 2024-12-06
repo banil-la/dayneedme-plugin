@@ -1,3 +1,5 @@
+// components/App.tsx
+
 import { h } from "preact";
 import CreateShortUrl from "./CreateShortUrl";
 import Profile from "./auth/Profile";

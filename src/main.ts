@@ -18,7 +18,7 @@ export default function () {
     console.log("SAVE_TOKEN received with token:", token);
     try {
       await figma.clientStorage.setAsync(TOKEN_KEY, token);
-      console.log("Token saved successfully:", token);
+      console.log("Token saved successfully:");
       figma.ui.postMessage({ type: "TOKEN_SAVED", token });
     } catch (error) {
       console.error("Error saving token:", error);
@@ -33,7 +33,7 @@ export default function () {
   on("LOAD_TOKEN", async () => {
     try {
       const token = await figma.clientStorage.getAsync(TOKEN_KEY);
-      console.log("Token loaded successfully:", token);
+      console.log("Token loaded successfully:");
       figma.ui.postMessage({ type: "LOADED_TOKEN", token });
     } catch (error) {
       console.error("Error loading token:", error);
@@ -68,7 +68,7 @@ export default function () {
       }
       const nodeId = nodes[0].id;
       const link = `https://www.figma.com/file/${
-        figma.fileKey
+        figma.fileKey || "KXgRDFTKNPHbLa0IXZTG6x" // todo: get file key
       }?node-id=${encodeURIComponent(nodeId)}`;
       emit("SHARE_LINK", link);
     } catch (error) {

@@ -11,7 +11,11 @@ const LogoutButton: React.FC = () => {
     emit("DELETE_TOKEN"); // Emit an event to delete the token from storage
   };
 
-  return <button onClick={handleLogout}>Logout</button>;
+  return (
+    <button className="btn btn-xs" onClick={handleLogout}>
+      Logout
+    </button>
+  );
 };
 
 export default LogoutButton;

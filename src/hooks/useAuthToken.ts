@@ -1,4 +1,4 @@
-// hooks/useAuthToken.ts
+// src/hooks/useAuthToken.ts
 
 import { useState, useEffect } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
