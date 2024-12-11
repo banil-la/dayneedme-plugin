@@ -1,25 +1,28 @@
-// components/CreateShortUrl.tsx
-
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
-import copyToClipboard from "../hooks/copyToClipboard";
-import { useAuth } from "../context/AuthContext"; // Authentication context
+import copyToClipboard from "../../../hooks/copyToClipboard";
+import { useAuth } from "../../../context/AuthContext";
+import { getServerUrl } from "../../../utils/getServerUrl";
 
-const CreateShortUrl: React.FC = () => {
-  // State variables
+interface CreateShortUrlProps {
+  onUpdateRecentUrls: () => void; // Callback to update recent URLs
+}
+
+const CreateShortUrl: React.FC<CreateShortUrlProps> = ({
+  onUpdateRecentUrls,
+}) => {
   const [shortUrl, setShortUrl] = useState<string | null>(null); // Stores the generated short URL
   const [isLoading, setIsLoading] = useState(false); // Indicates loading state for button
   const { authToken } = useAuth(); // Auth token from the context
 
   useEffect(() => {
-    // Event handler: Receives the Figma frame URL from the main process
     const handleShareLink = async (figmaUrl: string) => {
       console.log("[CreateShortUrl] Received Figma URL:", figmaUrl);
 
       try {
         const response = await fetch(
-          "https://py-prod-adot.vercel.app/create-short-url",
+          `${getServerUrl()}/create-short-url`, // Dynamic URL
           {
             method: "POST",
             headers: {
@@ -40,6 +43,9 @@ const CreateShortUrl: React.FC = () => {
         setShortUrl(data.short_url);
         copyToClipboard(data.short_url);
         alert(`Short URL created and copied: ${data.short_url}`);
+
+        // Trigger recent URLs update
+        onUpdateRecentUrls();
       } catch (error) {
         console.error("[CreateShortUrl] Error creating short URL:", error);
         alert(
@@ -50,42 +56,27 @@ const CreateShortUrl: React.FC = () => {
       }
     };
 
-    // Event handler: No frame selected in Figma
-    const handleNoFrameSelected = () => {
-      alert("Please select a frame to generate a share link.");
-      setIsLoading(false);
-    };
-
-    // Event handler: Share link error from the backend
-    const handleShareLinkError = (error: string) => {
-      console.error("[CreateShortUrl] Error from SHARE_LINK event:", error);
-      alert(`Error: ${error}`);
-      setIsLoading(false);
-    };
-
-    // Register event listeners
+    // Register listener
     on("SHARE_LINK", handleShareLink);
-    on("NO_FRAME_SELECTED", handleNoFrameSelected);
-    on("SHARE_LINK_ERROR", handleShareLinkError);
 
-    // Cleanup function: Unregister event listeners on component unmount
+    // Cleanup listener on component unmount or dependency change
     return () => {
-      console.log("[CreateShortUrl] Cleaning up event listeners");
-      on("SHARE_LINK", () => {});
-      on("NO_FRAME_SELECTED", () => {});
-      on("SHARE_LINK_ERROR", () => {});
+      console.log("[CreateShortUrl] Cleaning up SHARE_LINK listener");
+      on("SHARE_LINK", () => {}); // Remove previous listener
     };
-  }, [authToken]); // Re-register listeners if authToken changes
+  }, [authToken, onUpdateRecentUrls]);
 
-  // Trigger short URL generation
   const handleGenerateShortUrl = () => {
+    if (isLoading) {
+      console.warn("[CreateShortUrl] Already generating a URL, skipping.");
+      return;
+    }
     console.log("[CreateShortUrl] Generate Short URL button clicked");
-    setIsLoading(true); // Set loading state
-    setShortUrl(null); // Reset previous short URL
-    emit("GET_SHARE_LINK"); // Emit event to main process to fetch Figma frame URL
+    setIsLoading(true);
+    setShortUrl(null);
+    emit("GET_SHARE_LINK");
   };
 
-  // Component UI
   return (
     <div className="flex flex-col gap-4 p-4">
       {shortUrl && (
@@ -100,7 +91,7 @@ const CreateShortUrl: React.FC = () => {
       )}
       <button
         onClick={handleGenerateShortUrl}
-        disabled={isLoading} // Disable button while loading
+        disabled={isLoading}
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
       >
         {isLoading ? "Generating..." : "Generate Short URL"}

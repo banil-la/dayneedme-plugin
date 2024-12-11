@@ -8,6 +8,7 @@ import { ResizeWindowHandler } from "./types";
 import { plugin } from "./constants";
 import App from "./components/App";
 import { AuthProvider } from "./context/AuthContext";
+import { GlobalProvider } from "./context/GlobalContext";
 
 function Plugin() {
   function onWindowResize({
@@ -30,7 +31,9 @@ function Plugin() {
 
   return (
     <AuthProvider>
-      <App />
+      <GlobalProvider>
+        <App />
+      </GlobalProvider>
     </AuthProvider>
   );
 }

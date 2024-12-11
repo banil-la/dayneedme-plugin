@@ -21,7 +21,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authToken, setAuthToken, isLoading] = useAuthToken();
 
   useEffect(() => {
-    console.log("AuthProvider: authToken changed =", authToken);
+    console.log(
+      "AuthProvider: authToken changed =",
+      authToken ? "exist" : "not exist"
+    );
   }, [authToken]);
 
   return (

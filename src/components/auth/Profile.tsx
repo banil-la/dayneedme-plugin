@@ -11,10 +11,18 @@ interface AuthToken {
 
 const Profile: React.FC = () => {
   const { authToken, isLoading } = useAuth();
-  console.log("Profile: authToken =", authToken, "isLoading =", isLoading);
+  console.log(
+    "Profile: authToken =",
+    authToken ? "exist" : "not exist",
+    "isLoading =",
+    isLoading
+  );
 
   useEffect(() => {
-    console.log("Profile: authToken changed =", authToken);
+    console.log(
+      "Profile: authToken changed =",
+      authToken ? "exist" : "not exist"
+    );
   }, [authToken]);
 
   if (isLoading) {

@@ -25,7 +25,10 @@ export function useAuthToken(): [
       switch (type) {
         case "LOADED_TOKEN":
         case "TOKEN_SAVED":
-          console.log(`useAuthToken: ${type} received:`, token);
+          console.log(
+            `useAuthToken: ${type} received:`,
+            token ? "exist" : "not exist"
+          );
           // 여기서 token이 객체인 경우 access_token을 추출
           if (
             typeof token === "object" &&
