@@ -6,7 +6,6 @@ import Profile from "./auth/Profile";
 import Login from "./Login";
 import Utils from "./utils/Utils";
 import UtilURL from "./UtilURL";
-import EnvironmentSwitcher from "./EnviromentSwitcher";
 import { useGlobal } from "../context/GlobalContext";
 
 const App: React.FC = () => {
@@ -19,9 +18,7 @@ const App: React.FC = () => {
 
   return (
     <div className="text-base">
-      <p>ENVIRONMENT: {environment}</p>
       <Profile />
-      <EnvironmentSwitcher />
       <Utils />
       {/* modes */}
       <UtilURL />

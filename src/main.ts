@@ -17,7 +17,7 @@ function isValidToken(token: any): token is string {
 export default function () {
   // 윈도우 크기 조정
   on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
-    console.log("RESIZE_WINDOW:", { width, height });
+    // console.log("RESIZE_WINDOW:", { width, height });
     figma.ui.resize(width, height);
   });
 

@@ -4,13 +4,14 @@ import { h } from "preact";
 import LogoutButton from "./LogoutButton";
 import { useEffect } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
+import EnvironmentSwitcher from "../EnviromentSwitcher";
 
 interface AuthToken {
   access_token?: string;
 }
 
 const Profile: React.FC = () => {
-  const { authToken, isLoading } = useAuth();
+  const { authToken, isLoading, user } = useAuth();
   console.log(
     "Profile: authToken =",
     authToken ? "exist" : "not exist",
@@ -43,7 +44,10 @@ const Profile: React.FC = () => {
     <div className="flex justify-between p-4">
       <div className="flex items-center gap-2">
         <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
-        <p>NAME</p>
+        <div>
+          <p>{user?.email}</p>
+          <EnvironmentSwitcher />
+        </div>
       </div>
       <LogoutButton />
       {/* <p className="overflow-x-scroll">Token: {tokenToDisplay}</p> */}
