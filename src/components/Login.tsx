@@ -10,21 +10,43 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // 로딩 상태
+  const [emailError, setEmailError] = useState<string | null>(null); // 이메일 오류 메시지
+
   const { setAuthToken } = useAuth();
+
+  // 이메일 검증 함수
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleInputChange = (
     e: h.JSX.TargetedEvent<HTMLInputElement, Event>
   ) => {
     const target = e.currentTarget;
+
     if (target.type === "email") {
       setEmail(target.value);
+      if (!validateEmail(target.value)) {
+        setEmailError("Invalid email format.");
+      } else {
+        setEmailError(null);
+      }
     } else if (target.type === "password") {
       setPassword(target.value);
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };
+
   const handleLogin = async () => {
     setError(null);
+    setIsLoading(true); // 로딩 시작
     try {
       const response = await fetch(
         "https://py-prod-adot.vercel.app/supabase-login",
@@ -51,6 +73,8 @@ const Login: React.FC = () => {
       });
     } catch (error) {
       setError(JSON.stringify(error));
+    } finally {
+      setIsLoading(false); // 로딩 종료
     }
   };
 
@@ -59,40 +83,61 @@ const Login: React.FC = () => {
       "TOKEN_SAVED",
       (tokens: { access_token: string; refresh_token: string }) => {
         setAuthToken(tokens.access_token);
-        // 리프레시 토큰도 저장
       }
     );
 
     return unsubscribe;
   }, [setAuthToken]);
 
+  // 로그인 버튼 활성화 조건
+  const isLoginEnabled = password.length > 0 && email.length > 0;
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-red-100">
-      <div className="flex flex-col gap-2 items-center justify-center">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
+      <div className="flex flex-col gap-2 items-center justify-center p-4 bg-white shadow-md rounded-md w-80">
+        <h2 className="text-lg font-bold mb-2">Login</h2>
+
+        {/* 이메일 입력 */}
         <input
-          className="input input-sm border border-[#FF0000]"
+          className={classNames(
+            "input input-sm w-full border",
+            emailError ? "border-red-500" : "border-gray-300"
+          )}
           type="email"
           placeholder="Email"
           value={email}
-          onChange={handleInputChange}
+          onInput={handleInputChange}
         />
+        {emailError && <p className="text-red-500 text-xs">{emailError}</p>}
+
+        {/* 비밀번호 입력 */}
         <input
-          className="input input-sm border border-black"
+          className="input input-sm w-full border border-gray-300"
           type="password"
           placeholder="Password"
           value={password}
-          onChange={handleInputChange}
+          onInput={handleInputChange}
+          onKeyDown={handleKeyDown}
         />
+
+        {/* 로그인 버튼 */}
         <button
-          class={classNames(
-            "w-full btn btn-sm",
-            email.length > 0 && password.length > 0 && "btn-primary"
+          className={classNames(
+            "w-full btn btn-sm mt-2",
+            isLoginEnabled ? "btn-primary" : "btn-disabled"
           )}
           onClick={handleLogin}
+          disabled={!isLoginEnabled || isLoading}
         >
-          Login
+          {isLoading ? "Loading..." : "Login"}
         </button>
-        {error && <p class="error">{error}</p>}
+
+        {/* 오류 메시지 */}
+        {error && (
+          <p className="text-red-500 text-sm mt-2">
+            {error.replace(/\"/g, "")}
+          </p>
+        )}
       </div>
     </div>
   );

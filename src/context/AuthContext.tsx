@@ -11,7 +11,9 @@ interface UserInfo {
 
 interface AuthContextType {
   authToken: string | null;
+  refreshToken: string | null;
   setAuthToken: (token: string | null) => void;
+  setRefreshToken: (token: string | null) => void;
   isLoading: boolean;
   user: UserInfo | null;
 }
@@ -24,15 +26,17 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authToken, setAuthToken, isLoading] = useAuthToken();
+  const [refreshToken, setRefreshToken] = useState<string | null>(null); // 새로 추가
   const [user, setUser] = useState<UserInfo | null>(null);
 
   // 유저 정보를 가져오는 함수
-  const fetchUserInfo = async (token: string) => {
+  const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
       const response = await fetch("http://localhost:8080/get-user-info", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          "X-Refresh-Token": refreshToken, // Refresh Token을 커스텀 헤더로 추가
           "Content-Type": "application/json",
         },
       });
@@ -50,24 +54,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // authToken 변경 시 유저 정보를 가져옴
+  // authToken 또는 refreshToken 변경 시 유저 정보를 가져옴
   useEffect(() => {
-    if (authToken) {
-      fetchUserInfo(authToken);
+    if (authToken && refreshToken) {
+      fetchUserInfo(authToken, refreshToken);
     } else {
       setUser(null);
     }
-  }, [authToken]);
+  }, [authToken, refreshToken]);
 
   useEffect(() => {
     console.log(
       "AuthProvider: authToken changed =",
       authToken ? "exist" : "not exist"
     );
-  }, [authToken]);
+    console.log(
+      "AuthProvider: refreshToken changed =",
+      refreshToken ? "exist" : "not exist"
+    );
+  }, [authToken, refreshToken]);
 
   return (
-    <AuthContext.Provider value={{ authToken, setAuthToken, isLoading, user }}>
+    <AuthContext.Provider
+      value={{
+        authToken,
+        refreshToken,
+        setAuthToken,
+        setRefreshToken,
+        isLoading,
+        user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

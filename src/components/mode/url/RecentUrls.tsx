@@ -4,15 +4,16 @@ import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../../context/AuthContext";
 import { getServerUrl } from "../../../utils/getServerUrl";
+import { serviceUrl } from "../../../constants";
 
 interface RecentUrl {
   id: number;
-  short_url: string;
+  url_id: string | null; // 서버에서 받은 URL id
   created_at: string;
 }
 
 interface RecentUrlsProps {
-  refreshKey: number; // Triggers re-fetch when this value changes
+  refreshKey: number;
 }
 
 const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
@@ -20,10 +21,13 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { authToken } = useAuth();
 
+  // 서버 URL 가져오기
+  const serverUrl = getServerUrl();
+
   useEffect(() => {
     const fetchRecentUrls = async () => {
       setIsLoading(true);
-      const serverUrl = getServerUrl();
+
       try {
         const response = await fetch(`${serverUrl}/recent-urls`, {
           method: "GET",
@@ -43,19 +47,11 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
         console.log("[RecentUrls] Fetched Data:", data);
 
         setRecentUrls(
-          data.map((item: any) => {
-            console.log("[RecentUrls] Processed Item:", {
-              id: item.id,
-              short_url: item.short_url || "missing-url",
-              created_at: item.created_at,
-            });
-
-            return {
-              id: item.id,
-              short_url: item.short_url || "missing-url", // short_url 사용
-              created_at: item.created_at,
-            };
-          })
+          data.map((item: any) => ({
+            id: item.id,
+            url_id: item.url_id, // 서버에서 받은 url_id
+            created_at: item.created_at,
+          }))
         );
       } catch (error) {
         console.error("[RecentUrls] Error fetching recent URLs:", error);
@@ -63,12 +59,13 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
         setIsLoading(false);
       }
     };
+
     if (authToken) {
       fetchRecentUrls();
     } else {
       console.warn("[RecentUrls] No auth token available.");
     }
-  }, [authToken, refreshKey]);
+  }, [authToken, refreshKey, serverUrl]);
 
   if (isLoading) {
     return (
@@ -90,13 +87,13 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
         {recentUrls.map((url) => (
           <li key={url.id} className="mb-1 flex justify-between">
             <a
-              href={url.short_url !== "missing-url" ? url.short_url : "#"}
+              href={url.url_id ? `${serviceUrl}/s/${url.url_id}` : "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:underline"
             >
-              {url.short_url !== "missing-url"
-                ? url.short_url
+              {url.url_id
+                ? `${serviceUrl}/s/${url.url_id}`
                 : "URL not available"}
             </a>
             <span className="text-gray-500 text-sm ml-2">

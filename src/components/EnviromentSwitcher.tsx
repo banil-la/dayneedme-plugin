@@ -4,7 +4,13 @@ import { h } from "preact";
 import { Environment, useGlobal } from "../context/GlobalContext";
 
 const EnvironmentSwitcher: React.FC = () => {
-  const { environment, setEnvironment } = useGlobal();
+  const context = useGlobal();
+
+  if (!context) {
+    return null; // GlobalContext가 초기화되지 않으면 아무것도 렌더링하지 않음
+  }
+
+  const { environment, setEnvironment } = context;
 
   return (
     <select

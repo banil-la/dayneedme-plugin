@@ -1,20 +1,33 @@
+// src/utils/getServerUrl.ts
+
+import { devUrl, prodUrl } from "../constants";
 import { useGlobal } from "../context/GlobalContext";
 
 export const getServerUrl = (): string => {
   try {
-    const { environment } = useGlobal();
+    // 기본값은 production URL
+    let serverUrl = prodUrl;
 
-    switch (environment) {
-      case "dev":
-        return "http://localhost:8080";
-      case "prod":
-        return "https://py-prod-adot.vercel.app";
-      default:
-        console.warn(`[getServerUrl] Unknown environment: ${environment}`);
-        return "http://localhost:8080"; // 기본값으로 로컬 서버 반환
+    // GlobalContext에서 environment 가져오기
+    const context = useGlobal();
+
+    if (context) {
+      const { environment } = context;
+
+      // 개발자가 명시적으로 'dev'로 설정했을 때만 devUrl 반환
+      if (environment === "dev") {
+        console.info("[getServerUrl] Development mode enabled.");
+        serverUrl = devUrl;
+      }
+    } else {
+      console.warn(
+        "[getServerUrl] GlobalContext is not ready. Using production URL as default."
+      );
     }
+
+    return serverUrl;
   } catch (error) {
-    console.error("[getServerUrl] Failed to retrieve environment:", error);
-    return "http://localhost:8080"; // fallback to a default value
+    console.error("[getServerUrl] Error retrieving environment:", error);
+    return prodUrl; // fallback to production URL
   }
 };

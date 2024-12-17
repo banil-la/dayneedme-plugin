@@ -1,4 +1,4 @@
-// main.ts
+// src/main.ts
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { GetShareLinkHandler, ResizeWindowHandler } from "./types";
@@ -82,6 +82,7 @@ export default function () {
     }
   });
 
+  // 공유 URL 얻기
   on<GetShareLinkHandler>("GET_SHARE_LINK", async function () {
     try {
       const nodes = figma.currentPage.selection;
@@ -109,6 +110,10 @@ export default function () {
       console.error("DEBUG: Error reading clientStorage:", error);
     }
   });
+
+  if (figma) {
+    console.log(`** FIGMA: ${figma.root.name}`);
+  }
 
   showUI({
     height: plugin.size.height,

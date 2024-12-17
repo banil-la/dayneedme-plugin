@@ -6,6 +6,7 @@ import { useGlobal } from "../context/GlobalContext";
 import classNames from "classnames";
 import RecentUrls from "./mode/url/RecentUrls";
 import { useState } from "preact/hooks";
+import FileSelector from "./mode/url/FileSelector";
 
 const UtilURL: React.FC = () => {
   const { mode } = useGlobal();
@@ -20,6 +21,7 @@ const UtilURL: React.FC = () => {
     <div
       className={classNames("p-4", mode === "url" ? "visible" : "invisible")}
     >
+      <FileSelector />
       <RecentUrls refreshKey={refreshKey} />
       <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
     </div>

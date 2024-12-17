@@ -1,4 +1,4 @@
-// ui.tsx
+// src/ui.tsx
 
 import { h } from "preact";
 import "!./output.css";

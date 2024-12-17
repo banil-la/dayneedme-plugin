@@ -30,6 +30,14 @@
     "id": "1438698572434072915",
     "name": "Dayneed.me",
     "main": "src/main.ts",
-    "ui": "src/ui.tsx"
+    "ui": "src/ui.tsx",
+    "networkAccess": {
+      "allowedDomains": [
+        "http://localhost:8080",
+        "https://py-prod-adot.vercel.app",
+        "https://dayneed.me"
+      ],
+      "reasoning": "To fetch and send data to our backend server for sharing links."
+    }
   }
 }

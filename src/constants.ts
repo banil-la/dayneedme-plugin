@@ -13,3 +13,6 @@ export const plugin = {
     },
   },
 };
+export const devUrl = "http://localhost:8080";
+export const prodUrl = "https://py-prod-adot.vercel.app";
+export const serviceUrl = "https://dayneed.me";

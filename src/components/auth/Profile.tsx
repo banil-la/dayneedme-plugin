@@ -1,6 +1,6 @@
 // src/components/Profile.tsx
 
-import { h } from "preact";
+import { Fragment, h } from "preact";
 import LogoutButton from "./LogoutButton";
 import { useEffect } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
@@ -34,23 +34,25 @@ const Profile: React.FC = () => {
     return <p>Not authenticated</p>;
   }
 
-  // authToken이 객체인 경우를 처리
-  const tokenToDisplay =
-    typeof authToken === "object" && authToken !== null
-      ? (authToken as AuthToken).access_token
-      : authToken;
-
   return (
     <div className="flex justify-between p-4">
-      <div className="flex items-center gap-2">
-        <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
-        <div>
-          <p>{user?.email}</p>
-          <EnvironmentSwitcher />
-        </div>
-      </div>
-      <LogoutButton />
-      {/* <p className="overflow-x-scroll">Token: {tokenToDisplay}</p> */}
+      {user ? (
+        <Fragment>
+          <div className="flex items-center gap-2">
+            <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
+            <div class={`flex flex-col gap-2`}>
+              <p>{user?.email}</p>
+              {user?.role === "superadmin" && <EnvironmentSwitcher />}
+            </div>
+          </div>
+          <LogoutButton />
+        </Fragment>
+      ) : (
+        <Fragment>
+          <p>Loading...</p>
+          <LogoutButton />
+        </Fragment>
+      )}
     </div>
   );
 };
