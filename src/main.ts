@@ -6,8 +6,9 @@ import { plugin } from "./constants";
 
 const TOKEN_KEY = "ACCESS_TOKEN";
 
-interface TokenObject {
+export interface TokenData {
   access_token: string;
+  refresh_token: string;
 }
 
 function isValidToken(token: any): token is string {
@@ -22,7 +23,7 @@ export default function () {
   });
 
   // 토큰 저장
-  on("SAVE_TOKEN", async (token: string | TokenObject) => {
+  on("SAVE_TOKEN", async (token: string | TokenData) => {
     console.log("SAVE_TOKEN received with token:", token);
     if (
       typeof token === "object" &&

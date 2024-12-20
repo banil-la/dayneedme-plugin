@@ -17,10 +17,9 @@ const App: React.FC = () => {
   return (
     <div className="text-base">
       <Profile />
-      <p>user: {JSON.stringify(user)}</p>
       <Utils />
       {/* modes */}
-      {/* <UtilURL /> */}
+      <UtilURL />
     </div>
   );
 };

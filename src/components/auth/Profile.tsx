@@ -29,7 +29,7 @@ const Profile: React.FC = () => {
   return (
     <div className="flex justify-between p-4">
       {user ? (
-        <Fragment>
+        <div className={`w-full flex items-center justify-between`}>
           <div className="flex items-center gap-2">
             <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
             <div className={`flex flex-col gap-2`}>
@@ -38,7 +38,7 @@ const Profile: React.FC = () => {
             </div>
           </div>
           <LogoutButton />
-        </Fragment>
+        </div>
       ) : (
         <Fragment>
           <p>Loading...</p>

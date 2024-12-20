@@ -5,6 +5,7 @@ import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../context/AuthContext";
 import classNames from "classnames";
+import { TokenData } from "../main";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +14,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false); // 로딩 상태
   const [emailError, setEmailError] = useState<string | null>(null); // 이메일 오류 메시지
 
-  const { setAuthToken } = useAuth();
+  const { setTokens } = useAuth();
 
   // 이메일 검증 함수
   const validateEmail = (email: string) => {
@@ -46,7 +47,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     setError(null);
-    setIsLoading(true); // 로딩 시작
+    setIsLoading(true);
     try {
       const response = await fetch(
         "https://py-prod-adot.vercel.app/supabase-login",
@@ -63,31 +64,31 @@ const Login: React.FC = () => {
       }
 
       const data = await response.json();
-      if (!data.access_token) {
-        throw new Error("No token received");
+      if (!data.access_token || !data.refresh_token) {
+        throw new Error("Invalid token data received");
       }
 
-      emit("SAVE_TOKEN", {
+      const tokenData: TokenData = {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
-      });
+      };
+
+      setTokens(tokenData);
+      emit("SAVE_TOKEN", tokenData);
     } catch (error) {
-      setError(JSON.stringify(error));
+      setError(error instanceof Error ? error.message : String(error));
     } finally {
-      setIsLoading(false); // 로딩 종료
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const unsubscribe = on(
-      "TOKEN_SAVED",
-      (tokens: { access_token: string; refresh_token: string }) => {
-        setAuthToken(tokens.access_token);
-      }
-    );
+    const unsubscribe = on("TOKEN_SAVED", (tokenData: TokenData) => {
+      setTokens(tokenData);
+    });
 
     return unsubscribe;
-  }, [setAuthToken]);
+  }, [setTokens]);
 
   // 로그인 버튼 활성화 조건
   const isLoginEnabled = password.length > 0 && email.length > 0;
