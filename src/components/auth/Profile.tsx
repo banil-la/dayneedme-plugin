@@ -6,25 +6,17 @@ import { useEffect } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
 import EnvironmentSwitcher from "../EnviromentSwitcher";
 
-interface AuthToken {
-  access_token?: string;
-}
-
 const Profile: React.FC = () => {
   const { authToken, isLoading, user } = useAuth();
-  console.log(
-    "Profile: authToken =",
-    authToken ? "exist" : "not exist",
-    "isLoading =",
-    isLoading
-  );
+
+  console.log("[Profile] authToken:", authToken);
+  console.log("[Profile] isLoading:", isLoading);
+  console.log("[Profile] user:", user);
 
   useEffect(() => {
-    console.log(
-      "Profile: authToken changed =",
-      authToken ? "exist" : "not exist"
-    );
-  }, [authToken]);
+    console.log("[Profile] authToken changed:", authToken);
+    console.log("[Profile] user changed:", user);
+  }, [authToken, user]);
 
   if (isLoading) {
     return <p>Loading...</p>;
@@ -40,7 +32,7 @@ const Profile: React.FC = () => {
         <Fragment>
           <div className="flex items-center gap-2">
             <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
-            <div class={`flex flex-col gap-2`}>
+            <div className={`flex flex-col gap-2`}>
               <p>{user?.email}</p>
               {user?.role === "superadmin" && <EnvironmentSwitcher />}
             </div>

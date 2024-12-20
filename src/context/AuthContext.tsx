@@ -7,6 +7,7 @@ interface UserInfo {
   id: string;
   email: string;
   role: string;
+  name: string;
 }
 
 interface AuthContextType {
@@ -32,25 +33,72 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 유저 정보를 가져오는 함수
   const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
+      console.log("[fetchUserInfo] Fetching user info with token:", token);
       const response = await fetch("http://localhost:8080/get-user-info", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "X-Refresh-Token": refreshToken, // Refresh Token을 커스텀 헤더로 추가
+          "X-Refresh-Token": refreshToken,
           "Content-Type": "application/json",
         },
       });
 
+      console.log("[fetchUserInfo] Response status:", response.status);
+
       if (!response.ok) {
+        if (response.status === 401) {
+          console.log("Access token expired. Attempting to refresh...");
+          const newToken = await refreshAccessToken(refreshToken);
+          if (newToken) {
+            setAuthToken(newToken);
+            fetchUserInfo(newToken, refreshToken); // Retry with new token
+          } else {
+            console.error("Refresh token expired. Logging out.");
+            setAuthToken(null);
+            setRefreshToken(null);
+            setUser(null);
+          }
+          return;
+        }
         throw new Error("Failed to fetch user information");
       }
 
       const userData = await response.json();
-      console.log("Fetched User Info:", userData);
-      setUser(userData);
+      console.log("[fetchUserInfo] User data received:", userData);
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        name: `${userData.first_name} ${userData.last_name}`,
+      }); // 올바른 형식으로 `setUser` 호출
     } catch (error) {
-      console.error("Error fetching user info:", error);
-      setUser(null); // 에러 시 유저 정보를 null로 설정
+      console.error("[fetchUserInfo] Error fetching user info:", error);
+      setUser(null);
+    }
+  };
+
+  const refreshAccessToken = async (
+    refreshToken: string
+  ): Promise<string | null> => {
+    try {
+      const response = await fetch("http://localhost:8080/refresh-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to refresh access token");
+      }
+
+      const data = await response.json();
+      console.log("Access token refreshed:", data.accessToken);
+      return data.accessToken;
+    } catch (error) {
+      console.error("Error refreshing access token:", error);
+      return null;
     }
   };
 

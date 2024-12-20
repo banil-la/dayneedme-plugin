@@ -6,11 +6,9 @@ import Profile from "./auth/Profile";
 import Login from "./Login";
 import Utils from "./utils/Utils";
 import UtilURL from "./UtilURL";
-import { useGlobal } from "../context/GlobalContext";
 
 const App: React.FC = () => {
-  const { authToken } = useAuth();
-  const { environment } = useGlobal();
+  const { authToken, user } = useAuth();
 
   if (!authToken) {
     return <Login />;
@@ -19,9 +17,10 @@ const App: React.FC = () => {
   return (
     <div className="text-base">
       <Profile />
+      <p>user: {JSON.stringify(user)}</p>
       <Utils />
       {/* modes */}
-      <UtilURL />
+      {/* <UtilURL /> */}
     </div>
   );
 };
