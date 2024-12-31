@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import Profile from "./auth/Profile";
 import Login from "./Login";
 import Utils from "./utils/Utils";
-import UtilURL from "./UtilURL";
+import UtilURL from "./utils/UtilURL";
+import UtilString from "./utils/UtilString";
 
 const App: React.FC = () => {
   const { authToken, user } = useAuth();
@@ -20,6 +21,7 @@ const App: React.FC = () => {
       <Utils />
       {/* modes */}
       <UtilURL />
+      <UtilString />
     </div>
   );
 };

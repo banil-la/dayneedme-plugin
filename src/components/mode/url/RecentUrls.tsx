@@ -23,43 +23,29 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
 
   // 서버 URL 가져오기
   const serverUrl = getServerUrl();
+  const fetchRecentUrls = async () => {
+    setIsLoading(true);
 
-  useEffect(() => {
-    const fetchRecentUrls = async () => {
-      setIsLoading(true);
+    try {
+      const response = await fetch(`${serverUrl}/api/url/recent-urls`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-      try {
-        const response = await fetch(`${serverUrl}/recent-urls`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("[RecentUrls] Response error data:", errorData);
-          throw new Error(errorData.detail || "Failed to fetch recent URLs");
-        }
-
-        const data = await response.json();
-        console.log("[RecentUrls] Fetched Data:", data);
-
-        setRecentUrls(
-          data.map((item: any) => ({
-            id: item.id,
-            url_id: item.url_id, // 서버에서 받은 url_id
-            created_at: item.created_at,
-          }))
-        );
-      } catch (error) {
-        console.error("[RecentUrls] Error fetching recent URLs:", error);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      setRecentUrls(data);
+    } catch (error) {
+      console.error("[RecentUrls] Error fetching recent URLs:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  useEffect(() => {
     if (authToken) {
       fetchRecentUrls();
     } else {
@@ -82,7 +68,9 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
 
   return (
     <div className="recent-urls">
-      <h3 className="text-lg font-medium mb-2">Recent Short URLs</h3>
+      <button className={"btn btn-sm btn-primary"} onClick={fetchRecentUrls}>
+        Refresh
+      </button>
       <ul>
         {recentUrls.map((url) => (
           <li key={url.id} className="mb-1 flex justify-between">

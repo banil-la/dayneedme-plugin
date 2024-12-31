@@ -1,12 +1,12 @@
 // src/components/mode/UtilURL.tsx
 
 import { h } from "preact";
-import CreateShortUrl from "./mode/url/CreateShortUrl";
-import { useGlobal } from "../context/GlobalContext";
+import CreateShortUrl from "../mode/url/CreateShortUrl";
+import { useGlobal } from "../../context/GlobalContext";
 import classNames from "classnames";
-import RecentUrls from "./mode/url/RecentUrls";
+import RecentUrls from "../mode/url/RecentUrls";
 import { useState } from "preact/hooks";
-import FileSelector from "./mode/url/FileSelector";
+import FileSelector from "../mode/url/FileSelector";
 
 const UtilURL: React.FC = () => {
   const { mode } = useGlobal();
@@ -18,9 +18,7 @@ const UtilURL: React.FC = () => {
   };
   // Component UI
   return (
-    <div
-      className={classNames("p-4", mode === "url" ? "visible" : "invisible")}
-    >
+    <div className={classNames("p-4", mode === "url" ? "visible" : "hidden")}>
       <FileSelector />
       <RecentUrls refreshKey={refreshKey} />
       <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
