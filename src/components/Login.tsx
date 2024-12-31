@@ -50,7 +50,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "https://py-prod-adot.vercel.app/supabase-login",
+        "https://py-prod-adot.vercel.app/api/auth/supabase-login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

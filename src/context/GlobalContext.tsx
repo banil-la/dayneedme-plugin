@@ -21,8 +21,8 @@ interface GlobalProviderProps {
 }
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<Mode>("string");
-  const [environment, setEnvironment] = useState<Environment>("prod"); // Default environment is "dev"
+  const [mode, setMode] = useState<Mode>("url");
+  const [environment, setEnvironment] = useState<Environment>("dev"); // Default environment is "dev"
 
   return (
     <GlobalContext.Provider

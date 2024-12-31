@@ -1,8 +1,5 @@
 import { h } from "preact";
-import { useEffect, useState } from "preact/hooks";
-import { useAuth } from "../../context/AuthContext";
-import { getServerUrl } from "../../utils/getServerUrl";
-import { serviceUrl } from "../../constants";
+import { useState } from "preact/hooks";
 import { useGlobal } from "../../context/GlobalContext";
 import classNames from "classnames";
 import StringTable from "../mode/string/StringTable";

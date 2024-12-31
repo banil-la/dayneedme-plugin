@@ -19,9 +19,9 @@ const UtilURL: React.FC = () => {
   // Component UI
   return (
     <div className={classNames("p-4", mode === "url" ? "visible" : "hidden")}>
-      <FileSelector />
+      {/* <FileSelector /> */}
       <RecentUrls refreshKey={refreshKey} />
-      <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
+      {/* <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} /> */}
     </div>
   );
 };

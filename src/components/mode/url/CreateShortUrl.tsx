@@ -22,7 +22,7 @@ const CreateShortUrl: React.FC<CreateShortUrlProps> = ({
 
       try {
         const response = await fetch(
-          `${getServerUrl()}/create-short-url`, // Dynamic URL
+          `${getServerUrl()}/api/url/create-short-url`, // Dynamic URL
           {
             method: "POST",
             headers: {

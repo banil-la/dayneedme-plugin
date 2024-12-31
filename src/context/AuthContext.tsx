@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log("[fetchUserInfo] Fetching user info with token:", token);
       // const response = await fetch("http://localhost:8080/get-user-info", {
-      const response = await fetch(`${serverUrl}/get-user-info`, {
+      const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
