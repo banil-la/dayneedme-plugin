@@ -19,66 +19,72 @@ export function useAuthToken(): [
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log("useAuthToken: Initializing and emitting LOAD_TOKEN");
+    console.log("[useAuthToken] Initializing...");
     emit("LOAD_TOKEN");
 
     const handleMessage = (event: MessageEvent) => {
-      const { type, token, error } = event.data.pluginMessage;
+      const { type, token, error } = event.data.pluginMessage || {};
       console.log(
-        "Received pluginMessage in useAuthToken:",
-        event.data.pluginMessage
+        "[useAuthToken] Received message:",
+        type,
+        token ? "exists" : "null"
       );
 
       switch (type) {
         case "LOADED_TOKEN":
         case "TOKEN_SAVED":
-          console.log(
-            `useAuthToken: ${type} received:`,
-            token ? "exist" : "not exist"
-          );
-          if (
-            typeof token === "object" &&
-            token !== null &&
-            "access_token" in token &&
-            "refresh_token" in token
-          ) {
-            setAuthTokenState(token.access_token);
-            setRefreshTokenState(token.refresh_token);
-          } else if (typeof token === "string") {
-            setAuthTokenState(token);
+          console.log("[useAuthToken] Processing token:", token);
+          if (token) {
+            if (typeof token === "object" && "access_token" in token) {
+              setAuthTokenState(token.access_token);
+              setRefreshTokenState(token.refresh_token);
+            } else {
+              setAuthTokenState(token);
+            }
           }
           setIsLoading(false);
           break;
+
         case "TOKEN_DELETED":
-          console.log("useAuthToken: TOKEN_DELETED received");
           setAuthTokenState(null);
           setRefreshTokenState(null);
           setIsLoading(false);
           break;
+
         case "TOKEN_SAVE_ERROR":
         case "TOKEN_LOAD_ERROR":
         case "TOKEN_DELETE_ERROR":
-          console.error(`useAuthToken: Error - ${type}:`, error);
+          console.error(`[useAuthToken] Error - ${type}:`, error);
           setIsLoading(false);
           break;
+
+        default:
+          setIsLoading(false);
       }
     };
 
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const setTokens = (tokenData: TokenData | null) => {
-    console.log("useAuthToken: setTokens called with:", tokenData);
+    console.log("[useAuthToken] Setting tokens:", tokenData);
     setIsLoading(true);
     if (tokenData) {
-      console.log(
-        "useAuthToken: Emitting SAVE_TOKEN event with token:",
-        tokenData
-      );
+      setAuthTokenState(tokenData.access_token);
+      setRefreshTokenState(tokenData.refresh_token);
       emit("SAVE_TOKEN", tokenData);
     } else {
-      console.log("useAuthToken: Emitting DELETE_TOKEN event");
+      setAuthTokenState(null);
+      setRefreshTokenState(null);
       emit("DELETE_TOKEN");
     }
   };

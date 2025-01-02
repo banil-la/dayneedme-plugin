@@ -40,17 +40,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
       console.log("[fetchUserInfo] Fetching user info with token:", token);
-      // const response = await fetch("http://localhost:8080/get-user-info", {
-      const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Refresh-Token": refreshToken,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `https://py-prod-adot.vercel.app/api/auth/get-user-info`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Refresh-Token": refreshToken,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       console.log("[fetchUserInfo] Response status:", response.status);
+      const responseText = await response.text();
+      console.log("[fetchUserInfo] Raw response:", responseText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -76,14 +80,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("[fetchUserInfo] Failed to fetch user information");
       }
 
-      const userData = await response.json();
+      const userData = JSON.parse(responseText);
       console.log("[fetchUserInfo] User data received:", userData);
 
       setUser({
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        name: userData.name,
+        id: userData.id || userData.user?.id,
+        email: userData.email || userData.user?.email,
+        role: userData.role || userData.user?.role || "user",
+        name: userData.email || userData.user?.email || "",
       });
     } catch (error) {
       console.error("[fetchUserInfo] Error fetching user info:", error);
@@ -120,24 +124,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
-    if (authToken) {
-      console.log("[AuthProvider] Fetching user info...");
-      fetchUserInfo(authToken, refreshToken || "");
-    } else {
-      console.log("[AuthProvider] No authToken, resetting user.");
-      setUser(null);
+    console.log("[AuthProvider] Token state changed:", {
+      authToken,
+      refreshToken,
+    });
+    if (authToken && refreshToken) {
+      console.log("[AuthProvider] Fetching user info with new tokens");
+      fetchUserInfo(authToken, refreshToken);
     }
-  }, [authToken, refreshToken]);
-
-  useEffect(() => {
-    console.log(
-      "AuthProvider: authToken changed =",
-      authToken ? "exist" : "not exist"
-    );
-    console.log(
-      "AuthProvider: refreshToken changed =",
-      refreshToken ? "exist" : "not exist"
-    );
   }, [authToken, refreshToken]);
 
   return (

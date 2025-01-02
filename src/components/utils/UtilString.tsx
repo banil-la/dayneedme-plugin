@@ -2,7 +2,7 @@ import { h } from "preact";
 import { useState } from "preact/hooks";
 import { useGlobal } from "../../context/GlobalContext";
 import classNames from "classnames";
-import StringTable from "../mode/string/StringTable";
+import StringList from "../mode/string/StringList";
 
 interface String {
   id: number;
@@ -20,7 +20,7 @@ const UtilString: React.FC = () => {
     <div
       className={classNames("p-4", mode === "string" ? "visible" : "hidden")}
     >
-      <StringTable />
+      <StringList />
     </div>
   );
 };

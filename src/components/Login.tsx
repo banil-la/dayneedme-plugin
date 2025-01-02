@@ -11,9 +11,8 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // 로딩 상태
-  const [emailError, setEmailError] = useState<string | null>(null); // 이메일 오류 메시지
-
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const { setTokens } = useAuth();
 
   // 이메일 검증 함수
@@ -73,8 +72,12 @@ const Login: React.FC = () => {
         refresh_token: data.refresh_token,
       };
 
+      // 먼저 토큰을 저장하고
+      await emit("SAVE_TOKEN", tokenData);
+      // 그 다음 상태를 업데이트
       setTokens(tokenData);
-      emit("SAVE_TOKEN", tokenData);
+
+      console.log("[Login] Login successful, tokens saved");
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -82,8 +85,10 @@ const Login: React.FC = () => {
     }
   };
 
+  // TOKEN_SAVED 이벤트 리스너 추가
   useEffect(() => {
     const unsubscribe = on("TOKEN_SAVED", (tokenData: TokenData) => {
+      console.log("[Login] TOKEN_SAVED event received:", tokenData);
       setTokens(tokenData);
     });
 

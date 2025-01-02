@@ -112,6 +112,25 @@ export default function () {
     }
   });
 
+  // 필터 관련 이벤트 리스너 추가
+  on("GET_FILTER", async () => {
+    try {
+      const filter = await figma.clientStorage.getAsync("string-filter");
+      figma.ui.postMessage({ type: "FILTER_LOADED", filter });
+    } catch (error) {
+      console.error("Error loading filter:", error);
+    }
+  });
+
+  on("SAVE_FILTER", async (filter: string) => {
+    try {
+      await figma.clientStorage.setAsync("string-filter", filter);
+      figma.ui.postMessage({ type: "FILTER_SAVED" });
+    } catch (error) {
+      console.error("Error saving filter:", error);
+    }
+  });
+
   if (figma) {
     console.log(`** FIGMA: ${figma.root.name}`);
   }
@@ -120,4 +139,17 @@ export default function () {
     height: plugin.size.height,
     width: plugin.size.width,
   });
+
+  figma.ui.onmessage = async (msg) => {
+    if (msg.type === "getStorageData") {
+      const data = await figma.clientStorage.getAsync(msg.key);
+      figma.ui.postMessage({ type: "storageData", data });
+    }
+
+    if (msg.type === "setStorageData") {
+      await figma.clientStorage.setAsync(msg.key, msg.value);
+    }
+
+    // ... other message handlers
+  };
 }

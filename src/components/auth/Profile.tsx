@@ -18,33 +18,28 @@ const Profile: React.FC = () => {
     console.log("[Profile] user changed:", user);
   }, [authToken, user]);
 
-  if (isLoading) {
-    return <p>Loading...</p>;
-  }
-
   if (!authToken) {
     return <p>Not authenticated</p>;
   }
 
   return (
     <div className="flex justify-between p-4">
-      {user ? (
-        <div className={`w-full flex items-center justify-between`}>
-          <div className="flex items-center gap-2">
-            <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
-            <div className={`flex flex-col gap-2`}>
-              <p>{user?.email}</p>
-              {user?.role === "superadmin" && <EnvironmentSwitcher />}
-            </div>
+      <div className={`w-full flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
+          <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
+          <div className={`flex flex-col gap-2`}>
+            {isLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <Fragment>
+                <p>{user?.email}</p>
+                {user?.role === "superadmin" && <EnvironmentSwitcher />}
+              </Fragment>
+            )}
           </div>
-          <LogoutButton />
         </div>
-      ) : (
-        <Fragment>
-          <p>Loading...</p>
-          <LogoutButton />
-        </Fragment>
-      )}
+        <LogoutButton />
+      </div>
     </div>
   );
 };
