@@ -12,7 +12,7 @@ const StringTable: React.FC = () => {
 
   const fetchStrings = async () => {
     try {
-      const response = await fetch(`${serverUrl}/api/string`, {
+      const response = await fetch(`${serverUrl}/api/strings`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },

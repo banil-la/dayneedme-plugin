@@ -4,7 +4,6 @@ import { Fragment, h } from "preact";
 import LogoutButton from "./LogoutButton";
 import { useEffect } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
-import EnvironmentSwitcher from "../EnviromentSwitcher";
 
 const Profile: React.FC = () => {
   const { authToken, isLoading, user } = useAuth();
@@ -34,7 +33,6 @@ const Profile: React.FC = () => {
             <div className="min-w-7 w-7 aspect-square rounded-full bg-slate-300" />
             <div className={`flex flex-col gap-2`}>
               <p>{user?.email}</p>
-              {user?.role === "superadmin" && <EnvironmentSwitcher />}
             </div>
           </div>
           <LogoutButton />
