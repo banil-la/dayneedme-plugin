@@ -4,10 +4,7 @@ import { createContext, h } from "preact";
 import { ComponentChildren } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
-
-export type Mode = "string" | "url";
-export type OS = "ios" | "android" | "common";
-export type Product = "adotphone" | "aiphone";
+import { Mode, OS, Product } from "../types";
 
 interface GlobalContextType {
   mode: Mode;

@@ -25,3 +25,17 @@ export interface GetShareLinkHandler extends EventHandler {
   name: "GET_SHARE_LINK";
   handler: () => void;
 }
+
+export type Mode = "string" | "url";
+export type OS = "ios" | "android" | "common";
+export type Product = "adotphone" | "aiphone";
+
+export interface SaveStringSettingsHandler extends EventHandler {
+  name: "SAVE_STRING_SETTINGS";
+  handler: (settings: { os: OS; product: Product }) => void;
+}
+
+export interface LoadStringSettingsHandler extends EventHandler {
+  name: "LOAD_STRING_SETTINGS";
+  handler: () => void;
+}

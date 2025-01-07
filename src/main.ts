@@ -1,9 +1,8 @@
 // src/main.ts
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
-import { GetShareLinkHandler, ResizeWindowHandler } from "./types";
+import { GetShareLinkHandler, OS, Product, ResizeWindowHandler } from "./types";
 import { plugin } from "./constants";
-import { OS, Product } from "./context/GlobalContext";
 
 const TOKEN_KEY = "ACCESS_TOKEN";
 const SETTINGS_KEY = "STRING_SETTINGS";
