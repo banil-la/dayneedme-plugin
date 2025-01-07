@@ -1,12 +1,12 @@
 // src/components/mode/UtilURL.tsx
 
 import { h } from "preact";
-import CreateShortUrl from "../mode/url/CreateShortUrl";
+import CreateShortUrl from "../url/CreateShortUrl";
 import { useGlobal } from "../../context/GlobalContext";
 import classNames from "classnames";
-import RecentUrls from "../mode/url/RecentUrls";
+import RecentUrls from "../url/RecentUrls";
 import { useState } from "preact/hooks";
-import FileSelector from "../mode/url/FileSelector";
+import FileSelector from "../url/FileSelector";
 
 const UtilURL: React.FC = () => {
   const { mode } = useGlobal();

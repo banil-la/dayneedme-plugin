@@ -5,10 +5,16 @@ import { ComponentChildren } from "preact";
 import { useContext, useState } from "preact/hooks";
 
 export type Mode = "string" | "url";
+export type OS = "ios" | "android" | "common";
+export type Product = "adotphone" | "aiphone";
 
 interface GlobalContextType {
   mode: Mode;
   setMode: (mode: Mode) => void;
+  os: OS;
+  setOS: (os: OS) => void;
+  product: Product;
+  setProduct: (product: Product) => void;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -19,9 +25,13 @@ interface GlobalProviderProps {
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
   const [mode, setMode] = useState<Mode>("url");
+  const [os, setOS] = useState<OS>("common");
+  const [product, setProduct] = useState<Product>("adotphone");
 
   return (
-    <GlobalContext.Provider value={{ mode, setMode }}>
+    <GlobalContext.Provider
+      value={{ mode, setMode, os, setOS, product, setProduct }}
+    >
       {children}
     </GlobalContext.Provider>
   );

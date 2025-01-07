@@ -2,9 +2,9 @@
 
 import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useAuth } from "../../../context/AuthContext";
-import { getServerUrl } from "../../../utils/getServerUrl";
-import { serviceUrl } from "../../../constants";
+import { useAuth } from "../../context/AuthContext";
+import { getServerUrl } from "../../utils/getServerUrl";
+import { serviceUrl } from "../../constants";
 
 interface RecentUrl {
   id: number;

@@ -1,7 +1,7 @@
 import { h } from "preact";
-import { getServerUrl } from "../../../utils/getServerUrl";
 import { useEffect, useState } from "preact/hooks";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
+import { getServerUrl } from "../../utils/getServerUrl";
 
 const StringTable: React.FC = () => {
   const [strings, setStrings] = useState<String[]>([]);
@@ -34,10 +34,16 @@ const StringTable: React.FC = () => {
   }, []);
 
   return (
-    <div>
-      <button className={"btn btn-sm btn-primary"} onClick={fetchStrings}>
-        Refresh
-      </button>
+    <div className="recent-urls">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">StringTable</h3>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => fetchStrings()}
+        >
+          Refresh
+        </button>
+      </div>
       <p>StringTable</p>
       <p>{JSON.stringify(strings)}</p>
     </div>

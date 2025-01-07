@@ -2,7 +2,7 @@ import { h } from "preact";
 import { useState } from "preact/hooks";
 import { useGlobal } from "../../context/GlobalContext";
 import classNames from "classnames";
-import StringTable from "../mode/string/StringTable";
+import StringTable from "./StringTable";
 
 interface String {
   id: number;

@@ -3,10 +3,12 @@
 import { h } from "preact";
 import { useAuth } from "../context/AuthContext";
 import Profile from "./auth/Profile";
-import Login from "./Login";
-import Utils from "./utils/Utils";
-import UtilURL from "./utils/UtilURL";
-import UtilString from "./utils/UtilString";
+import Login from "./auth/Login";
+import Utils from "./Mode";
+import UtilString from "./strings/UtilString";
+import UtilURL from "./url/UtilURL";
+import SettingsSelector from "./SettingsSelector";
+import { useGlobal } from "../context/GlobalContext";
 
 const App: React.FC = () => {
   const { authToken, user } = useAuth();
@@ -18,6 +20,7 @@ const App: React.FC = () => {
   return (
     <div className="text-base">
       <Profile />
+      <SettingsSelector />
       <Utils />
       {/* modes */}
       <UtilURL />
