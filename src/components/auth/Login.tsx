@@ -94,14 +94,14 @@ const Login: React.FC = () => {
   const isLoginEnabled = password.length > 0 && email.length > 0;
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-      <div className="flex flex-col gap-2 items-center justify-center p-4 bg-white shadow-md rounded-md w-80">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-base-200">
+      <div className="flex flex-col gap-2 items-center justify-center p-4 bg-base-100 shadow-md rounded-md w-80">
         <h2 className="text-lg font-bold mb-2">Login</h2>
 
         {/* 이메일 입력 */}
         <input
           className={classNames(
-            "input input-sm w-full border",
+            "input input-sm w-full border bg-base-200",
             emailError ? "border-red-500" : "border-gray-300"
           )}
           type="email"
@@ -113,7 +113,7 @@ const Login: React.FC = () => {
 
         {/* 비밀번호 입력 */}
         <input
-          className="input input-sm w-full border border-gray-300"
+          className="input input-sm w-full border border-gray-300 bg-base-200"
           type="password"
           placeholder="Password"
           value={password}

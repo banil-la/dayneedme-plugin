@@ -3,8 +3,10 @@
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { GetShareLinkHandler, ResizeWindowHandler } from "./types";
 import { plugin } from "./constants";
+import { OS, Product } from "./context/GlobalContext";
 
 const TOKEN_KEY = "ACCESS_TOKEN";
+const SETTINGS_KEY = "STRING_SETTINGS";
 
 export interface TokenData {
   access_token: string;
@@ -13,6 +15,11 @@ export interface TokenData {
 
 function isValidToken(token: any): token is string {
   return typeof token === "string" && token.length > 0;
+}
+
+interface StringSettings {
+  os: OS;
+  product: Product;
 }
 
 export default function () {
@@ -109,6 +116,40 @@ export default function () {
       console.log("DEBUG: Stored token in clientStorage:", storedToken);
     } catch (error) {
       console.error("DEBUG: Error reading clientStorage:", error);
+    }
+  });
+
+  // 설정 저장
+  on("SAVE_STRING_SETTINGS", async (settings: StringSettings) => {
+    try {
+      await figma.clientStorage.setAsync(SETTINGS_KEY, settings);
+      figma.ui.postMessage({
+        type: "STRING_SETTINGS_SAVED",
+        settings,
+      });
+    } catch (error) {
+      console.error("Error saving string settings:", error);
+      figma.ui.postMessage({
+        type: "STRING_SETTINGS_SAVE_ERROR",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // 설정 로드
+  on("LOAD_STRING_SETTINGS", async () => {
+    try {
+      const settings = await figma.clientStorage.getAsync(SETTINGS_KEY);
+      figma.ui.postMessage({
+        type: "STRING_SETTINGS_LOADED",
+        settings,
+      });
+    } catch (error) {
+      console.error("Error loading string settings:", error);
+      figma.ui.postMessage({
+        type: "STRING_SETTINGS_LOAD_ERROR",
+        error: JSON.stringify(error),
+      });
     }
   });
 
