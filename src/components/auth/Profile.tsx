@@ -13,8 +13,8 @@ const Profile: React.FC = () => {
   console.log("[Profile] user:", user);
 
   useEffect(() => {
-    console.log("[Profile] authToken changed:", authToken);
-    console.log("[Profile] user changed:", user);
+    // console.log("[Profile] authToken changed:", authToken);
+    // console.log("[Profile] user changed:", user);
   }, [authToken, user]);
 
   if (isLoading) {

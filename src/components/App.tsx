@@ -2,6 +2,7 @@
 
 import { h } from "preact";
 import { useAuth } from "../context/AuthContext";
+import { useGlobal } from "../context/GlobalContext";
 import Profile from "./auth/Profile";
 import Login from "./auth/Login";
 import Utils from "./Mode";
@@ -11,19 +12,29 @@ import UtilURL from "./url/UtilURL";
 
 const App: React.FC = () => {
   const { authToken } = useAuth();
+  const { mode } = useGlobal();
 
   if (!authToken) {
     return <Login />;
   }
+
+  const renderModeContent = () => {
+    switch (mode) {
+      case "string":
+        return <UtilString />;
+      case "url":
+        return <UtilURL />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="text-base w-full h-full overflow-x-hidden">
       <Profile />
       {/* <SettingsSelector /> */}
       <Utils />
-      {/* modes */}
-      <UtilURL />
-      <UtilString />
+      {renderModeContent()}
     </div>
   );
 };

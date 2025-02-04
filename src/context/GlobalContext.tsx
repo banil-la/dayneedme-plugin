@@ -15,14 +15,16 @@ interface GlobalContextType {
   setProduct: (product: Product) => void;
 }
 
-const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
+export const GlobalContext = createContext<GlobalContextType | undefined>(
+  undefined
+);
 
 interface GlobalProviderProps {
   children: ComponentChildren;
 }
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<Mode>("url");
+  const [mode, setMode] = useState<Mode>("default");
   const [os, setOS] = useState<OS>("common");
   const [product, setProduct] = useState<Product>("adotphone");
 

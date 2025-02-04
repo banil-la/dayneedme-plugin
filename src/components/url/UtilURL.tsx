@@ -2,14 +2,10 @@
 
 import { h } from "preact";
 import CreateShortUrl from "../url/CreateShortUrl";
-import { useGlobal } from "../../context/GlobalContext";
-import classNames from "classnames";
 import RecentUrls from "../url/RecentUrls";
 import { useState } from "preact/hooks";
-import FileSelector from "../url/FileSelector";
 
 const UtilURL: React.FC = () => {
-  const { mode } = useGlobal();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleUpdateRecentUrls = () => {
@@ -18,8 +14,7 @@ const UtilURL: React.FC = () => {
   };
   // Component UI
   return (
-    <div className={classNames("p-4", mode === "url" ? "visible" : "hidden")}>
-      {/* <FileSelector /> */}
+    <div class="p-4">
       <RecentUrls refreshKey={refreshKey} />
       {/* <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} /> */}
     </div>

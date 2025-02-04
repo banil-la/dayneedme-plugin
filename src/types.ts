@@ -26,7 +26,7 @@ export interface GetShareLinkHandler extends EventHandler {
   handler: () => void;
 }
 
-export type Mode = "string" | "url";
+export type Mode = "default" | "string" | "url";
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 

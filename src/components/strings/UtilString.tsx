@@ -11,15 +11,6 @@ interface String {
 }
 
 const UtilString: React.FC = () => {
-  const { mode } = useGlobal();
-  // const [strings, setStrings] = useState<String[]>([]);
-  // const [isLoading, setIsLoading] = useState<boolean>(false);
-  // const [error, setError] = useState<string | null>(null);
-
-  if (mode !== "string") {
-    return null;
-  }
-
   return (
     <div className="flex flex-col">
       <SettingsSelector />
