@@ -39,3 +39,18 @@ export interface LoadStringSettingsHandler extends EventHandler {
   name: "LOAD_STRING_SETTINGS";
   handler: () => void;
 }
+
+export interface GetSelectedTextHandler extends EventHandler {
+  name: "GET_SELECTED_TEXT";
+  handler: () => void;
+}
+
+export interface SelectedTextReceivedHandler extends EventHandler {
+  name: "SELECTED_TEXT_RECEIVED";
+  handler: (text: string | null) => void;
+}
+
+export interface SelectionChangedHandler extends EventHandler {
+  name: "SELECTION_CHANGED";
+  handler: (text: string | null) => void;
+}

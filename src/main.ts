@@ -152,6 +152,29 @@ export default function () {
     }
   });
 
+  // 텍스트 선택 상태 확인
+  on("GET_SELECTED_TEXT", () => {
+    checkSelection();
+  });
+
+  // 선택 변경 감지
+  figma.on("selectionchange", () => {
+    checkSelection();
+  });
+
+  // 선택 상태 체크 및 이벤트 발생
+  function checkSelection() {
+    try {
+      const selection = figma.currentPage.selection;
+      const textNode = selection.find((node) => node.type === "TEXT");
+
+      emit("SELECTION_CHANGED", textNode ? textNode.characters : null);
+    } catch (error) {
+      console.error("[checkSelection] Error:", error);
+      emit("SELECTION_CHANGED", null);
+    }
+  }
+
   if (figma) {
     console.log(`** FIGMA: ${figma.root.name}`);
   }

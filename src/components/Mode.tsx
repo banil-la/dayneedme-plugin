@@ -1,6 +1,7 @@
 // src/components/utils/Utils.tabs-xs
 import { h } from "preact";
-import { Mode, useGlobal } from "../context/GlobalContext";
+import { useGlobal } from "../context/GlobalContext";
+import { Mode } from "../types";
 import classNames from "classnames";
 import { IconCompress, IconTable } from "./assets/UtilsIcon";
 

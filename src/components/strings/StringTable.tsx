@@ -1,18 +1,60 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
+import { useGlobal } from "../../context/GlobalContext";
+import { emit, on } from "@create-figma-plugin/utilities";
 import { getServerUrl } from "../../utils/getServerUrl";
 
-const StringTable: React.FC = () => {
-  const [strings, setStrings] = useState<String[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { authToken } = useAuth();
+interface StringData {
+  id: number;
+  string: string;
+  os: string;
+  product: string;
+}
 
+const StringTable: React.FC = () => {
+  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [matchingStrings, setMatchingStrings] = useState<StringData[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { authToken } = useAuth();
+  const { os, product } = useGlobal();
   const serverUrl = getServerUrl();
 
-  const fetchStrings = async () => {
+  // 선택된 텍스트 감지
+  useEffect(() => {
+    const checkSelection = () => {
+      emit("GET_SELECTED_TEXT");
+    };
+
+    // 초기 선택 확인
+    checkSelection();
+
+    // 선택 변경 이벤트 구독
+    const unsubscribe = on("SELECTION_CHANGED", (text: string | null) => {
+      setSelectedText(text); // text가 null이면 선택 해제된 상태
+      if (text === null) {
+        setMatchingStrings([]); // 선택 해제 시 검색 결과도 초기화
+      } else {
+        searchString(text);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [authToken, os, product]); // selectedText 의존성 제거
+
+  // 문자열 검색
+  const searchString = async (text: string) => {
+    console.log("[StringTable] Searching for text:", text);
+    setIsLoading(true);
     try {
-      const response = await fetch(`${serverUrl}/api/strings`, {
+      const url = `${serverUrl}/api/strings/?search=${encodeURIComponent(
+        text
+      )}&os=${os}&product=${product}`;
+      console.log("[StringTable] Request URL:", url);
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -23,29 +65,47 @@ const StringTable: React.FC = () => {
       }
 
       const data = await response.json();
-      setStrings(data);
+      console.log("[StringTable] Search results:", data);
+      setMatchingStrings(data);
     } catch (error) {
-      console.error("[StringTable] Error fetching strings:", error);
+      console.error("[StringTable] Error searching strings:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchStrings();
-  }, []);
-
   return (
-    <div className="recent-urls">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">StringTable</h3>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => fetchStrings()}
-        >
-          Refresh
-        </button>
-      </div>
-      <p>StringTable</p>
-      <p>{JSON.stringify(strings)}</p>
+    <div className="string-table">
+      {selectedText ? (
+        <div className="mb-4">
+          <h3 className="text-lg font-medium mb-2">Selected Text</h3>
+          <p className="bg-base-200 p-2 rounded">{selectedText}</p>
+        </div>
+      ) : (
+        <p className="text-gray-500 text-center py-8">
+          텍스트 레이어를 선택해주세요
+        </p>
+      )}
+
+      {isLoading ? (
+        <p>검색 중...</p>
+      ) : matchingStrings.length > 0 ? (
+        <div>
+          <h3 className="text-lg font-medium mb-2">Matching Strings</h3>
+          <ul className="space-y-2">
+            {matchingStrings.map((item) => (
+              <li key={item.id} className="bg-base-200 p-2 rounded">
+                <p>{item.string}</p>
+                <div className="text-sm text-gray-500">
+                  {item.os} | {item.product}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        selectedText && <p>일치하는 문자열이 없습니다</p>
+      )}
     </div>
   );
 };
