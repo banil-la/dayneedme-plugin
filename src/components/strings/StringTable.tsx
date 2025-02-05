@@ -16,8 +16,10 @@ const StringTable: React.FC = () => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [matchingStrings, setMatchingStrings] = useState<StringData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { authToken } = useAuth();
+  const { mode } = useGlobal();
   const { os, product } = useGlobal();
+  const { authToken } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
   const serverUrl = getServerUrl();
 
   // 선택된 텍스트 감지
@@ -44,6 +46,13 @@ const StringTable: React.FC = () => {
     };
   }, [authToken, os, product]); // selectedText 의존성 제거
 
+  useEffect(() => {
+    // mode가 string일 때만 API 요청
+    if (mode === "string") {
+      searchStrings(searchTerm, os, product, authToken);
+    }
+  }, [mode, searchTerm, os, product, authToken]);
+
   // 문자열 검색
   const searchString = async (text: string) => {
     console.log("[StringTable] Searching for text:", text);
@@ -66,6 +75,40 @@ const StringTable: React.FC = () => {
 
       const data = await response.json();
       console.log("[StringTable] Search results:", data);
+      setMatchingStrings(data);
+    } catch (error) {
+      console.error("[StringTable] Error searching strings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // searchStrings 함수 추가
+  const searchStrings = async (
+    searchTerm: string,
+    os: string,
+    product: string,
+    authToken: string | null
+  ) => {
+    if (!searchTerm) return;
+
+    setIsLoading(true);
+    try {
+      const url = `${serverUrl}/api/strings/?search=${encodeURIComponent(
+        searchTerm
+      )}&os=${os}&product=${product}`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       setMatchingStrings(data);
     } catch (error) {
       console.error("[StringTable] Error searching strings:", error);
