@@ -3,6 +3,9 @@
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { GetShareLinkHandler, OS, Product, ResizeWindowHandler } from "./types";
 import { plugin } from "./constants";
+import { getServerUrl } from "./utils/getServerUrl";
+
+const serverUrl = getServerUrl();
 
 const TOKEN_KEY = "ACCESS_TOKEN";
 const SETTINGS_KEY = "STRING_SETTINGS";
@@ -90,23 +93,34 @@ export default function () {
   });
 
   // 공유 URL 얻기
-  on("GET_SHARE_LINK", () => {
-    const selection = figma.currentPage.selection;
+  on<GetShareLinkHandler>("GET_SHARE_LINK", async ({ authToken, fileKey }) => {
+    try {
+      const nodeId = figma.currentPage.selection[0].id;
+      const url = `https://www.figma.com/file/${fileKey}?node-id=${nodeId}`;
 
-    if (!selection.length) {
-      emit("SHARE_LINK_ERROR", "Please select a frame first");
-      return;
+      const response = await fetch(`${serverUrl}/api/url/create-short-url`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create short URL");
+      }
+
+      const { shortUrl } = await response.json();
+      console.log("[GET_SHARE_LINK] Short URL created successfully:", shortUrl);
+      emit("SHARE_LINK", shortUrl);
+    } catch (error) {
+      console.error("[GET_SHARE_LINK] Error:", error);
+      emit(
+        "SHARE_LINK_ERROR",
+        error instanceof Error ? error.message : String(error)
+      );
     }
-
-    const node = selection[0];
-    const fileKey = figma.fileKey || "KXgRDFTKNPHbLa0IXZTG6x"; // 기본값 추가
-    const link = `https://www.figma.com/file/${fileKey}?node-id=${node.id}`;
-
-    console.log("[GET_SHARE_LINK] Creating link with:", {
-      fileKey,
-      nodeId: node.id,
-    });
-    emit("SHARE_LINK", link);
   });
 
   // 디버그: clientStorage 상태 확인
@@ -175,6 +189,64 @@ export default function () {
       emit("SELECTION_CHANGED", null);
     }
   }
+
+  // 노드 이동
+  on("NAVIGATE_TO_NODE", ({ fileKey, nodeId }) => {
+    if (fileKey !== figma.fileKey) {
+      figma.notify("This node is in a different file.");
+      return;
+    }
+
+    const node = figma.getNodeById(nodeId) as SceneNode;
+    if (node) {
+      figma.currentPage.selection = [node];
+      figma.viewport.scrollAndZoomIntoView([node]);
+    } else {
+      figma.notify("Node not found in current file.");
+    }
+  });
+
+  // 파일키 정보 확인
+  const checkFileKey = async (authToken: string) => {
+    const fileName = figma.root.name;
+    console.log("[checkFileKey] Starting file key check for:", fileName);
+
+    try {
+      const url = `${serverUrl}/api/url/get-file-key?filename=${encodeURIComponent(
+        fileName
+      )}`;
+      console.log("[checkFileKey] Requesting URL:", url);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("[checkFileKey] Response data:", data);
+
+      figma.ui.postMessage({
+        type: "FILE_KEY_INFO",
+        info: {
+          fileName,
+          fileKey: data.fileKey,
+          isFromDatabase: data.isFromDatabase,
+        },
+      });
+    } catch (error) {
+      console.error("[checkFileKey] Error:", error);
+    }
+  };
+
+  // 토큰이 로드되면 파일키 확인
+  on("TOKEN_LOADED", (token: string) => {
+    checkFileKey(token);
+  });
 
   if (figma) {
     console.log(`** FIGMA: ${figma.root.name}`);

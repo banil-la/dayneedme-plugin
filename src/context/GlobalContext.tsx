@@ -4,7 +4,7 @@ import { createContext, h } from "preact";
 import { ComponentChildren } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
-import { Mode, OS, Product } from "../types";
+import { Mode, OS, Product, FileKeyInfo } from "../types";
 
 interface GlobalContextType {
   mode: Mode;
@@ -13,6 +13,8 @@ interface GlobalContextType {
   setOS: (os: OS) => void;
   product: Product;
   setProduct: (product: Product) => void;
+  fileKeyInfo: FileKeyInfo | null;
+  setFileKeyInfo: (info: FileKeyInfo | null) => void;
 }
 
 export const GlobalContext = createContext<GlobalContextType | undefined>(
@@ -24,9 +26,10 @@ interface GlobalProviderProps {
 }
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<Mode>("default");
+  const [mode, setMode] = useState<Mode>("url");
   const [os, setOS] = useState<OS>("common");
   const [product, setProduct] = useState<Product>("adotphone");
+  const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
 
   useEffect(() => {
     // 초기 설정 로드
@@ -44,6 +47,17 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
     return () => window.removeEventListener("message", handleSettingsLoaded);
   }, []);
 
+  useEffect(() => {
+    const handleFileKeyInfo = (event: MessageEvent) => {
+      if (event.data.pluginMessage?.type === "FILE_KEY_INFO") {
+        setFileKeyInfo(event.data.pluginMessage.info);
+      }
+    };
+
+    window.addEventListener("message", handleFileKeyInfo);
+    return () => window.removeEventListener("message", handleFileKeyInfo);
+  }, []);
+
   // OS나 Product가 변경될 때마다 저장
   useEffect(() => {
     emit("SAVE_STRING_SETTINGS", { os, product });
@@ -58,6 +72,8 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
         setOS,
         product,
         setProduct,
+        fileKeyInfo,
+        setFileKeyInfo,
       }}
     >
       {children}

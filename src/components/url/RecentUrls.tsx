@@ -5,10 +5,14 @@ import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
 import { getServerUrl } from "../../utils/getServerUrl";
 import { serviceUrl } from "../../constants";
+import { emit } from "@create-figma-plugin/utilities";
+import { useGlobal } from "../../context/GlobalContext";
 
 interface RecentUrl {
   id: number;
   url_id: string | null;
+  node_id: string;
+  file_key: string;
   created_at: string;
 }
 
@@ -24,12 +28,15 @@ interface RecentUrlsProps {
   refreshKey: number;
 }
 
+const FIXED_FILE_KEY = "LpmFJPyY0O1LhiHcmY13qp";
+
 const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
   const [recentUrls, setRecentUrls] = useState<RecentUrl[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const { authToken } = useAuth();
+  const { fileKeyInfo } = useGlobal();
   const serverUrl = getServerUrl();
 
   const fetchRecentUrls = async (page: number = 1) => {
@@ -37,7 +44,12 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
     console.log("[RecentUrls] Fetching page:", page);
 
     try {
-      const url = `${serverUrl}/api/url/recent-urls?page=${page}&page_size=5`;
+      if (!fileKeyInfo?.fileKey) {
+        setRecentUrls([]);
+        return;
+      }
+
+      const url = `${serverUrl}/api/url/recent-urls?page=${page}&page_size=5&file_key=${fileKeyInfo.fileKey}`;
       console.log("[RecentUrls] Request URL:", url);
 
       const response = await fetch(url, {
@@ -70,11 +82,15 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
     }
   };
 
+  const handleNodeClick = (fileKey: string, nodeId: string) => {
+    emit("NAVIGATE_TO_NODE", { fileKey: FIXED_FILE_KEY, nodeId });
+  };
+
   useEffect(() => {
-    if (authToken) {
+    if (fileKeyInfo?.fileKey) {
       fetchRecentUrls(1);
     }
-  }, [authToken, refreshKey, serverUrl]);
+  }, [fileKeyInfo?.fileKey, refreshKey]);
 
   return (
     <div className="recent-urls">
@@ -103,13 +119,15 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline"
                 >
-                  {url.url_id
-                    ? `${serviceUrl}/s/${url.url_id}`
-                    : "URL not available"}
-                </a>
-                <span className="text-gray-500 text-sm ml-2">
+                  {/* ${serviceUrl}/s/${url.url_id} */}
                   {new Date(url.created_at).toLocaleString()}
-                </span>
+                </a>
+                <button
+                  onClick={() => handleNodeClick(url.file_key, url.node_id)}
+                  className="text-gray-500 text-sm hover:text-blue-500"
+                >
+                  {url.file_key.substring(0, 8)}.../{url.node_id}
+                </button>
               </li>
             ))}
           </ul>

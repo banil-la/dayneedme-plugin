@@ -3,6 +3,7 @@
 import { createContext, h } from "preact";
 import { ComponentChildren } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
+import { emit } from "@create-figma-plugin/utilities";
 import { useAuthToken } from "../hooks/useAuthToken";
 import { getServerUrl } from "../utils/getServerUrl";
 
@@ -167,6 +168,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       refreshToken ? "exist" : "not exist"
     );
   }, [authToken, refreshToken]);
+
+  useEffect(() => {
+    const handleLoadedToken = (event: MessageEvent) => {
+      console.log("[AuthContext] Received message:", event.data.pluginMessage);
+
+      if (event.data.pluginMessage?.type === "LOADED_TOKEN" && !authToken) {
+        // authToken이 없을 때만
+        const token = event.data.pluginMessage.token;
+        console.log(
+          "[AuthContext] Token loaded, emitting TOKEN_LOADED:",
+          token
+        );
+        setTokens(token);
+        emit("TOKEN_LOADED", token);
+      }
+    };
+
+    if (!authToken) {
+      // authToken이 없을 때만 LOAD_TOKEN 요청
+      console.log("[AuthContext] Setting up token load listener");
+      window.addEventListener("message", handleLoadedToken);
+      console.log("[AuthContext] Emitting LOAD_TOKEN");
+      emit("LOAD_TOKEN");
+
+      return () => {
+        console.log("[AuthContext] Cleaning up token load listener");
+        window.removeEventListener("message", handleLoadedToken);
+      };
+    }
+  }, [authToken]); // authToken을 의존성 배열에 추가
 
   return (
     <AuthContext.Provider

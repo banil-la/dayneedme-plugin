@@ -4,15 +4,17 @@ import { emit, on } from "@create-figma-plugin/utilities";
 import copyToClipboard from "../../hooks/copyToClipboard";
 import { useAuth } from "../../context/AuthContext";
 import { getServerUrl } from "../../utils/getServerUrl";
+import { useGlobal } from "../../context/GlobalContext";
 
 interface ShareLinkProps {
   onUpdateRecentUrls: () => void;
 }
 
 const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
+  const { authToken } = useAuth();
+  const { fileKeyInfo } = useGlobal();
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { authToken } = useAuth();
 
   useEffect(() => {
     const handleShareLink = async (figmaUrl: string) => {
@@ -74,14 +76,18 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   }, [authToken, onUpdateRecentUrls]);
 
   const handleGenerateShortUrl = () => {
-    if (isLoading) {
-      console.warn("[ShareLink] Already generating a URL, skipping.");
+    if (isLoading) return;
+    if (!fileKeyInfo?.fileKey) {
+      emit("SHARE_LINK_ERROR", "Please select a file first");
       return;
     }
-    console.log("[ShareLink] Generate Short URL button clicked");
+
     setIsLoading(true);
     setShortUrl(null);
-    emit("GET_SHARE_LINK");
+    emit("GET_SHARE_LINK", {
+      authToken,
+      fileKey: fileKeyInfo.fileKey,
+    });
   };
 
   return (
