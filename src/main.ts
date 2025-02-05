@@ -90,22 +90,23 @@ export default function () {
   });
 
   // 공유 URL 얻기
-  on<GetShareLinkHandler>("GET_SHARE_LINK", async function () {
-    try {
-      const nodes = figma.currentPage.selection;
-      if (nodes.length === 0) {
-        emit("NO_FRAME_SELECTED");
-        return;
-      }
-      const nodeId = nodes[0].id;
-      const link = `https://www.figma.com/file/${
-        figma.fileKey || "KXgRDFTKNPHbLa0IXZTG6x" // todo: get file key
-      }?node-id=${encodeURIComponent(nodeId)}`;
-      emit("SHARE_LINK", link);
-    } catch (error) {
-      console.error("Error getting share link:", error);
-      emit("SHARE_LINK_ERROR", error);
+  on("GET_SHARE_LINK", () => {
+    const selection = figma.currentPage.selection;
+
+    if (!selection.length) {
+      emit("SHARE_LINK_ERROR", "Please select a frame first");
+      return;
     }
+
+    const node = selection[0];
+    const fileKey = figma.fileKey || "KXgRDFTKNPHbLa0IXZTG6x"; // 기본값 추가
+    const link = `https://www.figma.com/file/${fileKey}?node-id=${node.id}`;
+
+    console.log("[GET_SHARE_LINK] Creating link with:", {
+      fileKey,
+      nodeId: node.id,
+    });
+    emit("SHARE_LINK", link);
   });
 
   // 디버그: clientStorage 상태 확인

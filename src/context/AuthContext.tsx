@@ -80,8 +80,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      console.log("[fetchUserInfo] Response status:", response.status);
-
       if (!response.ok) {
         if (response.status === 401) {
           console.log(

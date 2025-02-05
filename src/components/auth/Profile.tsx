@@ -8,15 +8,6 @@ import { useAuth } from "../../context/AuthContext";
 const Profile: React.FC = () => {
   const { authToken, isLoading, user } = useAuth();
 
-  console.log("[Profile] authToken:", authToken);
-  console.log("[Profile] isLoading:", isLoading);
-  console.log("[Profile] user:", user);
-
-  useEffect(() => {
-    // console.log("[Profile] authToken changed:", authToken);
-    // console.log("[Profile] user changed:", user);
-  }, [authToken, user]);
-
   if (isLoading) {
     return <p>Loading...</p>;
   }

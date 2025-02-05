@@ -54,3 +54,8 @@ export interface SelectionChangedHandler extends EventHandler {
   name: "SELECTION_CHANGED";
   handler: (text: string | null) => void;
 }
+
+export interface ShareLinkErrorHandler extends EventHandler {
+  name: "SHARE_LINK_ERROR";
+  handler: (error: string) => void;
+}
