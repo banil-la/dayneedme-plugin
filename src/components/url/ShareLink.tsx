@@ -37,6 +37,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
         copyToClipboard(data.short_url);
         onUpdateRecentUrls();
         setIsLoading(false);
+        setDescription("");
       } else if (type === "SHARE_LINK_ERROR") {
         setError(data);
         setIsLoading(false);
@@ -72,7 +73,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
 
   const placeholderText = isFrameSelected
     ? "설명을 입력하세요"
-    : "프레임을 선택해 주세요";
+    : "URL을 공유할 프레임을 선택해 주세요";
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,7 +83,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
           value={description}
           onChange={(e) => setDescription(e.currentTarget.value)}
           placeholder={placeholderText}
-          className="flex-1"
+          className="flex-1 px-3"
           disabled={!isFrameSelected}
         />
         <button

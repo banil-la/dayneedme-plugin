@@ -287,12 +287,20 @@ export default function () {
     checkFileKey(token);
   });
 
-  if (figma) {
-    console.log(`** FIGMA: ${figma.root.name}`);
-  }
+  // 초기 모드 설정
+  currentMode = "url";
 
   showUI({
     height: plugin.size.height,
     width: plugin.size.width,
   });
+
+  // UI가 생성된 직후 초기 선택 상태 체크
+  figma.once("run", () => {
+    checkSelection();
+  });
+
+  if (figma) {
+    console.log(`** FIGMA: ${figma.root.name}`);
+  }
 }

@@ -3502,6 +3502,11 @@ input.tab:checked + .tab-content,
   padding-bottom: 2rem;
 }
 
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
 .pt-3 {
   padding-top: 0.75rem;
 }
