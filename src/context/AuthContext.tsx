@@ -37,6 +37,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const serverUrl = getServerUrl();
 
+  useEffect(() => {
+    const validateAndFetchUser = async () => {
+      if (!authToken) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to validate token");
+        }
+
+        const userData = await response.json();
+        setUser(userData);
+      } catch (error) {
+        console.error("Token validation failed:", error);
+        setTokens(null);
+        setUser(null);
+      }
+    };
+
+    validateAndFetchUser();
+  }, [authToken]);
+
   const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
       console.log("[fetchUserInfo] Fetching user info with token:", token);

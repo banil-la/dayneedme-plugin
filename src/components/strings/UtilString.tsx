@@ -1,7 +1,4 @@
 import { h } from "preact";
-import { useState } from "preact/hooks";
-import { useGlobal } from "../../context/GlobalContext";
-import classNames from "classnames";
 import StringTable from "./StringTable";
 import SettingsSelector from "../SettingsSelector";
 
