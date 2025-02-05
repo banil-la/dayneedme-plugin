@@ -90,13 +90,3 @@ export interface SelectionChangedHandler extends EventHandler {
   name: "SELECTION_CHANGED";
   handler: (text: string | null) => void;
 }
-
-export interface TokenData {
-  access_token: string;
-  refresh_token: string;
-}
-
-export interface StringSettings {
-  os: OS;
-  product: Product;
-}
