@@ -93,35 +93,69 @@ export default function () {
   });
 
   // 공유 URL 얻기
-  on<GetShareLinkHandler>("GET_SHARE_LINK", async ({ authToken, fileKey }) => {
-    try {
-      const nodeId = figma.currentPage.selection[0].id;
-      const url = `https://www.figma.com/file/${fileKey}?node-id=${nodeId}`;
+  on<GetShareLinkHandler>(
+    "GET_SHARE_LINK",
+    async ({ authToken, fileKey, description }) => {
+      try {
+        const selection = figma.currentPage.selection;
+        if (selection.length === 0) {
+          throw new Error("Please select a node first");
+        }
 
-      const response = await fetch(`${serverUrl}/api/url/create-short-url`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
+        // 1. 현재 선택된 노드의 Figma URL 가져오기
+        const nodeId = selection[0].id;
+        const fileName = encodeURIComponent(figma.root.name); // 현재 파일 이름 가져오기
+        const fullUrl = `https://www.figma.com/design/${fileKey}/${fileName}?node-id=${nodeId}`;
 
-      if (!response.ok) {
-        throw new Error("Failed to create short URL");
+        // 2. URL에서 필요한 부분만 추출
+        const urlPart = fullUrl.split("https://www.figma.com/design/")[1];
+
+        console.log("[GET_SHARE_LINK] Creating URL:", fullUrl);
+        console.log("[GET_SHARE_LINK] URL part:", urlPart);
+
+        const response = await fetch(`${serverUrl}/api/url/create-short-url`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file_key: fileKey,
+            url: urlPart,
+            description,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("[GET_SHARE_LINK] Error response:", errorData);
+          throw new Error(errorData.detail || "Failed to create short URL");
+        }
+
+        const data = await response.json();
+        console.log("[GET_SHARE_LINK] Response:", data);
+
+        // Figma 알림 표시
+        const message = data.isExisting
+          ? "Existing URL copied to clipboard"
+          : "New URL created and copied to clipboard";
+        figma.notify(message);
+
+        emit("SHARE_LINK", data);
+      } catch (error) {
+        console.error("[GET_SHARE_LINK] Error:", error);
+        // 에러 메시지도 Figma 알림으로 표시
+        figma.notify(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+          { error: true }
+        );
+        emit(
+          "SHARE_LINK_ERROR",
+          error instanceof Error ? error.message : String(error)
+        );
       }
-
-      const { shortUrl } = await response.json();
-      console.log("[GET_SHARE_LINK] Short URL created successfully:", shortUrl);
-      emit("SHARE_LINK", shortUrl);
-    } catch (error) {
-      console.error("[GET_SHARE_LINK] Error:", error);
-      emit(
-        "SHARE_LINK_ERROR",
-        error instanceof Error ? error.message : String(error)
-      );
     }
-  });
+  );
 
   // 디버그: clientStorage 상태 확인
   on("DEBUG_CLIENT_STORAGE", async () => {
@@ -189,22 +223,6 @@ export default function () {
       emit("SELECTION_CHANGED", null);
     }
   }
-
-  // 노드 이동
-  on("NAVIGATE_TO_NODE", ({ fileKey, nodeId }) => {
-    if (fileKey !== figma.fileKey) {
-      figma.notify("This node is in a different file.");
-      return;
-    }
-
-    const node = figma.getNodeById(nodeId) as SceneNode;
-    if (node) {
-      figma.currentPage.selection = [node];
-      figma.viewport.scrollAndZoomIntoView([node]);
-    } else {
-      figma.notify("Node not found in current file.");
-    }
-  });
 
   // 파일키 정보 확인
   const checkFileKey = async (authToken: string) => {

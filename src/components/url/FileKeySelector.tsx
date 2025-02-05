@@ -17,6 +17,7 @@ const FileKeySelector: React.FC = () => {
   );
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTitle, setSelectedTitle] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // 사용 가능한 파일키 목록 로드
   useEffect(() => {
@@ -36,6 +37,8 @@ const FileKeySelector: React.FC = () => {
         setAvailableFileKeys(data);
       } catch (error) {
         console.error("[FileKeySelector] Error:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -56,28 +59,34 @@ const FileKeySelector: React.FC = () => {
 
   return (
     <div className="p-2 bg-gray-100 rounded flex flex-col gap-2">
-      <div className="flex justify-between items-center">
-        <p className="text-sm">
-          <span className="font-medium">
-            {fileKeyInfo?.isFromDatabase ? "✓" : "⚠"} File Name:
-          </span>{" "}
-          {fileKeyInfo?.fileName || "Not set"}
-        </p>
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          className="text-xs text-blue-500 hover:text-blue-700"
-        >
-          {isEditing ? "Done" : "Edit"}
-        </button>
+      <div className="flex justify-between items-center text-sm">
+        {fileKeyInfo?.isFromDatabase ? (
+          <div className="w-full flex justify-between items-center">
+            <p>
+              <span className="font-medium">
+                {fileKeyInfo?.isFromDatabase ? "✓" : "⚠"} File Name:
+              </span>{" "}
+              {fileKeyInfo?.fileName || "Not set"}
+            </p>
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="text-xs text-blue-500 hover:text-blue-700"
+            >
+              {isEditing ? "Done" : "Edit"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-black text-opacity-30 font-semibold">Not Set</p>
+        )}
       </div>
 
-      {(isEditing || !fileKeyInfo?.fileName) && (
+      {!isLoading && isEditing && (
         <select
+          className="select select-bordered select-xs w-full"
           value={selectedTitle}
           onChange={(e) =>
             handleTitleChange((e.target as HTMLSelectElement).value)
           }
-          className="select select-bordered select-sm w-full"
         >
           <option value="">Select a file</option>
           {availableFileKeys.map((fk) => (

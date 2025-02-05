@@ -47,7 +47,7 @@ const UtilURL: React.FC = () => {
   }
 
   return (
-    <div className="p-3">
+    <div className="p-3 flex flex-col gap-3">
       <FileKeySelector />
       <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
       <RecentUrls refreshKey={refreshKey} />

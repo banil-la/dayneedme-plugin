@@ -10,10 +10,12 @@ import { useGlobal } from "../../context/GlobalContext";
 
 interface RecentUrl {
   id: number;
+  url: string;
   url_id: string | null;
   node_id: string;
   file_key: string;
   created_at: string;
+  description: string | null;
 }
 
 interface UrlResponse {
@@ -28,7 +30,20 @@ interface RecentUrlsProps {
   refreshKey: number;
 }
 
-const FIXED_FILE_KEY = "LpmFJPyY0O1LhiHcmY13qp";
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+
+  const year = date.getFullYear().toString().slice(2); // YY
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // MM
+  const day = String(date.getDate()).padStart(2, "0"); // DD
+
+  const hours = date.getHours();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = String(hours % 12 || 12).padStart(2, "0"); // 12시간제
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}.${month}.${day} ${ampm} ${displayHours}:${minutes}`;
+};
 
 const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
   const [recentUrls, setRecentUrls] = useState<RecentUrl[]>([]);
@@ -82,10 +97,6 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
     }
   };
 
-  const handleNodeClick = (fileKey: string, nodeId: string) => {
-    emit("NAVIGATE_TO_NODE", { fileKey: FIXED_FILE_KEY, nodeId });
-  };
-
   useEffect(() => {
     if (fileKeyInfo?.fileKey) {
       fetchRecentUrls(1);
@@ -93,15 +104,9 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
   }, [fileKeyInfo?.fileKey, refreshKey]);
 
   return (
-    <div className="recent-urls">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Recent Short URLs</h3>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => fetchRecentUrls(1)}
-        >
-          Refresh
-        </button>
+    <div className="p-3 bg-gray-100 rounded flex flex-col gap-2">
+      <div className="flex justify-between items-center">
+        <p className="text-base font-semibold">최근 생성 URL</p>
       </div>
 
       {isLoading ? (
@@ -112,22 +117,19 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
         <Fragment>
           <ul>
             {recentUrls.map((url) => (
-              <li key={url.id} className="mb-1 flex justify-between">
+              <li key={url.id} className="mb-2 flex flex-col">
                 <a
-                  href={url.url_id ? `${serviceUrl}/s/${url.url_id}` : "#"}
+                  href={`https://www.figma.com/design/${url.url}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
+                  className="text-base text-blue-500 hover:underline"
                 >
-                  {/* ${serviceUrl}/s/${url.url_id} */}
-                  {new Date(url.created_at).toLocaleString()}
+                  {`https://dayneed.me/s/${url.url_id}`}
                 </a>
-                <button
-                  onClick={() => handleNodeClick(url.file_key, url.node_id)}
-                  className="text-gray-500 text-sm hover:text-blue-500"
-                >
-                  {url.file_key.substring(0, 8)}.../{url.node_id}
-                </button>
+                <span>{url.description}</span>
+                <span className="text-sm text-gray-500">
+                  {formatDate(url.created_at)}
+                </span>
               </li>
             ))}
           </ul>

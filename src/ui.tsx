@@ -3,7 +3,7 @@
 import { h } from "preact";
 import "!./output.css";
 import { render, useWindowResize } from "@create-figma-plugin/ui";
-import { emit } from "@create-figma-plugin/utilities";
+import { emit, on } from "@create-figma-plugin/utilities";
 import { ResizeWindowHandler } from "./types";
 import { plugin } from "./constants";
 import App from "./components/App";
@@ -27,6 +27,11 @@ function Plugin() {
     minHeight: plugin.size.min.height,
     minWidth: plugin.size.min.width,
     resizeBehaviorOnDoubleClick: "minimize",
+  });
+
+  // SELECTION_CHANGED 이벤트 핸들러 추가
+  on("SELECTION_CHANGED", (text: string | null) => {
+    console.log("[UI] Selection changed:", text);
   });
 
   return (

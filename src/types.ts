@@ -23,7 +23,11 @@ export interface DeleteTokenHandler extends EventHandler {
 
 export interface GetShareLinkHandler extends EventHandler {
   name: "GET_SHARE_LINK";
-  handler: (data: { authToken: string; fileKey: string }) => void;
+  handler: (data: {
+    authToken: string;
+    fileKey: string;
+    description: string;
+  }) => void;
 }
 
 export type Mode = "default" | "string" | "url";

@@ -15,100 +15,92 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   const { fileKeyInfo } = useGlobal();
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [description, setDescription] = useState<string>("");
+
+  const handleShareLink = () => {
+    emit("GET_SHARE_LINK", {
+      authToken,
+      fileKey: fileKeyInfo?.fileKey,
+      description: description.trim(),
+    });
+  };
 
   useEffect(() => {
-    const handleShareLink = async (figmaUrl: string) => {
-      console.log("[ShareLink] Received Figma URL:", figmaUrl);
-
-      try {
-        const response = await fetch(
-          `${getServerUrl()}/api/url/create-short-url`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${authToken}`,
-            },
-            body: JSON.stringify({ url: figmaUrl }),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Failed to create short URL");
-        }
-
-        const data = await response.json();
-        console.log("[ShareLink] Short URL created:", data.short_url);
+    const handleMessage = (event: MessageEvent) => {
+      const [type, data] = event.data.pluginMessage || [];
+      if (type === "SHARE_LINK") {
         setShortUrl(data.short_url);
         copyToClipboard(data.short_url);
-
-        // 기존 URL 여부에 따라 다른 메시지 표시
-        const message = data.isExisting
-          ? `Existing URL copied: ${data.short_url}`
-          : `Short URL created and copied: ${data.short_url}`;
-        alert(message);
-
         onUpdateRecentUrls();
-      } catch (error) {
-        console.error("[ShareLink] Error creating short URL:", error);
-        alert(
-          `Error: ${JSON.stringify(error) || "Unable to create short URL"}`
-        );
-      } finally {
-        setIsLoading(false);
+        setIsLoading(false); // 로딩 상태 해제
+      } else if (type === "SHARE_LINK_ERROR") {
+        setError(data);
+        setIsLoading(false); // 에러 발생 시에도 로딩 상태 해제
       }
     };
 
-    // 에러 핸들러 추가
-    const handleError = (error: string) => {
-      alert(error);
-      setIsLoading(false);
-    };
-
-    const unsubscribeError = on("SHARE_LINK_ERROR", handleError);
-    const unsubscribeShare = on("SHARE_LINK", handleShareLink);
-
-    return () => {
-      unsubscribeError();
-      unsubscribeShare();
-    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [authToken, onUpdateRecentUrls]);
 
   const handleGenerateShortUrl = () => {
     if (isLoading) return;
-    if (!fileKeyInfo?.fileKey) {
-      emit("SHARE_LINK_ERROR", "Please select a file first");
+    if (!fileKeyInfo?.fileKey || !fileKeyInfo?.fileName) {
+      setError("Please select a file first");
+      return;
+    }
+    if (!description.trim()) {
+      setError("Please enter a description");
       return;
     }
 
     setIsLoading(true);
     setShortUrl(null);
-    emit("GET_SHARE_LINK", {
-      authToken,
-      fileKey: fileKeyInfo.fileKey,
-    });
+    handleShareLink();
   };
 
+  // 버튼 활성화 조건 체크
+  const isButtonEnabled =
+    !isLoading &&
+    fileKeyInfo?.fileKey &&
+    fileKeyInfo?.fileName &&
+    description.trim().length > 0;
+
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {shortUrl && (
-        <div className="mt-4">
-          <p className="font-medium">
-            Short URL:{" "}
-            <a href={shortUrl} target="_blank" rel="noopener noreferrer">
-              {shortUrl}
-            </a>
-          </p>
-        </div>
-      )}
+    <div className="flex flex-col gap-4">
+      <input
+        type="text"
+        value={description}
+        onChange={(e) => setDescription(e.currentTarget.value)}
+        placeholder="URL에 대한 설명을 입력하세요"
+        className="input input-bordered w-full"
+      />
       <button
         onClick={handleGenerateShortUrl}
-        disabled={isLoading}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+        disabled={!isButtonEnabled}
+        className={`px-4 py-2 rounded text-base font-medium ${
+          isButtonEnabled
+            ? "bg-blue-500 text-white hover:bg-blue-600"
+            : "bg-gray-400 text-gray-200 cursor-not-allowed"
+        }`}
       >
-        {isLoading ? "Generating..." : "Generate Short URL"}
+        {isLoading ? "생성 중..." : "단축 URL 생성하기"}
       </button>
+      {shortUrl && (
+        <p>
+          ✅{" "}
+          <a
+            className="font-medium text-blue-600 underline"
+            href={shortUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {shortUrl}
+          </a>
+        </p>
+      )}
+      {error && <div className="text-red-500">{error}</div>}
     </div>
   );
 };
