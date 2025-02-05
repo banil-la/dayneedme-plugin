@@ -26,7 +26,7 @@ interface GlobalProviderProps {
 }
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
-  const [mode, setMode] = useState<Mode>("url");
+  const [mode, setModeState] = useState<Mode>("url");
   const [os, setOS] = useState<OS>("common");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
@@ -62,6 +62,11 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
   useEffect(() => {
     emit("SAVE_STRING_SETTINGS", { os, product });
   }, [os, product]);
+
+  const setMode = (newMode: Mode) => {
+    emit("SET_MODE", newMode);
+    setModeState(newMode);
+  };
 
   return (
     <GlobalContext.Provider

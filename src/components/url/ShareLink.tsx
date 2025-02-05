@@ -17,6 +17,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [description, setDescription] = useState<string>("");
+  const [isFrameSelected, setIsFrameSelected] = useState(false);
 
   const handleShareLink = () => {
     emit("GET_SHARE_LINK", {
@@ -29,14 +30,16 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const [type, data] = event.data.pluginMessage || [];
-      if (type === "SHARE_LINK") {
+      if (type === "SELECTION_CHANGED") {
+        setIsFrameSelected(data);
+      } else if (type === "SHARE_LINK") {
         setShortUrl(data.short_url);
         copyToClipboard(data.short_url);
         onUpdateRecentUrls();
-        setIsLoading(false); // 로딩 상태 해제
+        setIsLoading(false);
       } else if (type === "SHARE_LINK_ERROR") {
         setError(data);
-        setIsLoading(false); // 에러 발생 시에도 로딩 상태 해제
+        setIsLoading(false);
       }
     };
 
@@ -67,26 +70,33 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
     fileKeyInfo?.fileName &&
     description.trim().length > 0;
 
+  const placeholderText = isFrameSelected
+    ? "설명을 입력하세요"
+    : "프레임을 선택해 주세요";
+
   return (
     <div className="flex flex-col gap-4">
-      <input
-        type="text"
-        value={description}
-        onChange={(e) => setDescription(e.currentTarget.value)}
-        placeholder="URL에 대한 설명을 입력하세요"
-        className="input input-bordered w-full"
-      />
-      <button
-        onClick={handleGenerateShortUrl}
-        disabled={!isButtonEnabled}
-        className={`px-4 py-2 rounded text-base font-medium ${
-          isButtonEnabled
-            ? "bg-blue-500 text-white hover:bg-blue-600"
-            : "bg-gray-400 text-gray-200 cursor-not-allowed"
-        }`}
-      >
-        {isLoading ? "생성 중..." : "단축 URL 생성하기"}
-      </button>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.currentTarget.value)}
+          placeholder={placeholderText}
+          className="flex-1"
+          disabled={!isFrameSelected}
+        />
+        <button
+          onClick={handleGenerateShortUrl}
+          disabled={!isButtonEnabled}
+          className={`px-4 py-2 rounded btn btn-sm ${
+            isButtonEnabled
+              ? "bg-blue-500 text-white hover:bg-blue-600"
+              : "bg-gray-400 text-gray-200 cursor-not-allowed"
+          }`}
+        >
+          {isLoading ? "생성 중..." : "생성"}
+        </button>
+      </div>
       {shortUrl && (
         <p>
           ✅{" "}

@@ -104,7 +104,7 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
   }, [fileKeyInfo?.fileKey, refreshKey]);
 
   return (
-    <div className="p-3 bg-gray-100 rounded flex flex-col gap-2">
+    <div className="border-t border-t-base-300 pt-3">
       <div className="flex justify-between items-center">
         <p className="text-base font-semibold">최근 생성 URL</p>
       </div>
@@ -117,7 +117,10 @@ const RecentUrls: React.FC<RecentUrlsProps> = ({ refreshKey }) => {
         <Fragment>
           <ul>
             {recentUrls.map((url) => (
-              <li key={url.id} className="mb-2 flex flex-col">
+              <li
+                key={url.id}
+                className="my-2 p-3 bg-gray-100 rounded flex flex-col"
+              >
                 <a
                   href={`https://www.figma.com/design/${url.url}`}
                   target="_blank"

@@ -1,7 +1,14 @@
 // src/main.ts
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
-import { GetShareLinkHandler, OS, Product, ResizeWindowHandler } from "./types";
+import {
+  GetShareLinkHandler,
+  OS,
+  Product,
+  ResizeWindowHandler,
+  SetModeHandler,
+  Mode,
+} from "./types";
 import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
 
@@ -23,6 +30,8 @@ interface StringSettings {
   os: OS;
   product: Product;
 }
+
+let currentMode: Mode = "default";
 
 export default function () {
   // 윈도우 크기 조정
@@ -211,13 +220,25 @@ export default function () {
     checkSelection();
   });
 
+  // 모드 설정 핸들러 추가
+  on<SetModeHandler>("SET_MODE", (mode) => {
+    currentMode = mode;
+    checkSelection(); // 모드가 변경될 때 현재 선택 상태 체크
+  });
+
   // 선택 상태 체크 및 이벤트 발생
   function checkSelection() {
     try {
       const selection = figma.currentPage.selection;
-      const textNode = selection.find((node) => node.type === "TEXT");
 
-      emit("SELECTION_CHANGED", textNode ? textNode.characters : null);
+      if (currentMode === "string") {
+        // string 모드: 텍스트 노드 찾기
+        const textNode = selection.find((node) => node.type === "TEXT");
+        emit("SELECTION_CHANGED", textNode ? textNode.characters : null);
+      } else if (currentMode === "url") {
+        // url 모드: 프레임/레이어 선택 여부
+        emit("SELECTION_CHANGED", selection.length > 0);
+      }
     } catch (error) {
       console.error("[checkSelection] Error:", error);
       emit("SELECTION_CHANGED", null);

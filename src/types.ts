@@ -94,3 +94,8 @@ export interface SelectionChangedHandler extends EventHandler {
   name: "SELECTION_CHANGED";
   handler: (text: string | null) => void;
 }
+
+export interface SetModeHandler extends EventHandler {
+  name: "SET_MODE";
+  handler: (mode: Mode) => void;
+}

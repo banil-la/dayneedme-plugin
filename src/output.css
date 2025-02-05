@@ -3083,6 +3083,11 @@ input.tab:checked + .tab-content,
   position: fixed;
 }
 
+.my-2 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -3282,6 +3287,14 @@ input.tab:checked + .tab-content,
   border-bottom-width: 1px;
 }
 
+.border-t {
+  border-top-width: 1px;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
 .border-\[\#FF0000\] {
   --tw-border-opacity: 1;
   border-color: rgb(255 0 0 / var(--tw-border-opacity, 1));
@@ -3315,6 +3328,26 @@ input.tab:checked + .tab-content,
 .border-red-500 {
   --tw-border-opacity: 1;
   border-color: rgb(239 68 68 / var(--tw-border-opacity, 1));
+}
+
+.border-base-100 {
+  --tw-border-opacity: 1;
+  border-color: var(--fallback-b1,oklch(var(--b1)/var(--tw-border-opacity, 1)));
+}
+
+.border-t-base-100 {
+  --tw-border-opacity: 1;
+  border-top-color: var(--fallback-b1,oklch(var(--b1)/var(--tw-border-opacity, 1)));
+}
+
+.border-t-base-300 {
+  --tw-border-opacity: 1;
+  border-top-color: var(--fallback-b3,oklch(var(--b3)/var(--tw-border-opacity, 1)));
+}
+
+.border-b-base-100 {
+  --tw-border-opacity: 1;
+  border-bottom-color: var(--fallback-b1,oklch(var(--b1)/var(--tw-border-opacity, 1)));
 }
 
 .bg-base-100 {
@@ -3467,6 +3500,10 @@ input.tab:checked + .tab-content,
 .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
+}
+
+.pt-3 {
+  padding-top: 0.75rem;
 }
 
 .text-center {
