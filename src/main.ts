@@ -2,7 +2,7 @@
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { GetShareLinkHandler, OS, Product, ResizeWindowHandler } from "./types";
-import { plugin } from "./constants";
+import { plugin } from "./utils/constants";
 import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();

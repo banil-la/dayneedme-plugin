@@ -4,7 +4,7 @@ import { Fragment, h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
 import { getServerUrl } from "../../utils/getServerUrl";
-import { serviceUrl } from "../../constants";
+import { serviceUrl } from "../../utils/constants";
 import { emit } from "@create-figma-plugin/utilities";
 import { useGlobal } from "../../context/GlobalContext";
 
