@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
-      console.log("[fetchUserInfo] Fetching user info with token:", token);
+      // console.log("[fetchUserInfo] Fetching user info with token:", token);
       // const response = await fetch("http://localhost:8080/get-user-info", {
       const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
         method: "GET",
@@ -83,9 +83,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log(
-            "[fetchUserInfo] Access token expired. Attempting refresh..."
-          );
+          // console.log(
+          //   "[fetchUserInfo] Access token expired. Attempting refresh..."
+          // );
           const newTokenData = await refreshAccessToken(refreshToken);
           if (newTokenData) {
             setTokens(newTokenData);
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const userData = await response.json();
-      console.log("[fetchUserInfo] User data received:", userData);
+      // console.log("[fetchUserInfo] User data received:", userData);
 
       setUser({
         id: userData.id,

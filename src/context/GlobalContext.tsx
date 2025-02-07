@@ -15,6 +15,8 @@ interface GlobalContextType {
   setProduct: (product: Product) => void;
   fileKeyInfo: FileKeyInfo | null;
   setFileKeyInfo: (info: FileKeyInfo | null) => void;
+  currentFileName: string;
+  setCurrentFileName: (fileName: string) => void;
 }
 
 export const GlobalContext = createContext<GlobalContextType | undefined>(
@@ -27,9 +29,10 @@ interface GlobalProviderProps {
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
   const [mode, setModeState] = useState<Mode>("url");
-  const [os, setOS] = useState<OS>("common");
+  const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string>("");
 
   useEffect(() => {
     // 초기 설정 로드
@@ -63,6 +66,22 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
     emit("SAVE_STRING_SETTINGS", { os, product });
   }, [os, product]);
 
+  // 파일명 메시지 핸들러
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.pluginMessage?.type === "CURRENT_FILENAME") {
+        const fileName = event.data.pluginMessage.fileName;
+        console.log("[GlobalContext] Received current file name:", fileName);
+        if (fileName) {
+          setCurrentFileName(fileName);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   const setMode = (newMode: Mode) => {
     emit("SET_MODE", newMode);
     setModeState(newMode);
@@ -79,6 +98,8 @@ export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
         setProduct,
         fileKeyInfo,
         setFileKeyInfo,
+        currentFileName,
+        setCurrentFileName,
       }}
     >
       {children}

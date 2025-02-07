@@ -325,6 +325,20 @@ export default function () {
     });
   });
 
+  // 파일명 요청 처리
+  on("GET_CURRENT_FILENAME", () => {
+    const currentFileName = figma.root.name;
+    console.log(
+      "[Plugin] Sending current file name on request:",
+      currentFileName
+    );
+
+    figma.ui.postMessage({
+      type: "CURRENT_FILENAME",
+      fileName: currentFileName,
+    });
+  });
+
   showUI({
     height: plugin.size.height,
     width: plugin.size.width,

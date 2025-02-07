@@ -78,6 +78,8 @@ export interface GlobalContextType {
   setProduct: (product: Product) => void;
   fileKeyInfo: FileKeyInfo | null;
   setFileKeyInfo: (info: FileKeyInfo | null) => void;
+  currentFileName: string;
+  setCurrentFileName: (fileName: string) => void;
 }
 
 export interface GetSelectedTextHandler extends EventHandler {

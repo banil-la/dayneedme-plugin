@@ -4,11 +4,13 @@ import { useState, useEffect } from "preact/hooks";
 interface RegisterFileModalProps {
   onClose: () => void;
   onSubmit: (url: string) => void;
+  currentFileName: string;
 }
 
 const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
   onClose,
   onSubmit,
+  currentFileName,
 }) => {
   const [url, setUrl] = useState("");
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
@@ -53,6 +55,11 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 w-96 max-w-full">
         <h2 className="text-lg font-bold mb-4">파일 등록</h2>
+
+        <div className="mb-4">
+          <p className="text-sm font-medium mb-1">현재 파일:</p>
+          <p className="text-sm bg-gray-100 p-2 rounded">{currentFileName}</p>
+        </div>
 
         <div className="mb-6">
           <p className="text-sm text-gray-600 mb-4">
