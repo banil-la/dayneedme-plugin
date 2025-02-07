@@ -1,9 +1,8 @@
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import { emit, on } from "@create-figma-plugin/utilities";
+import { emit } from "@create-figma-plugin/utilities";
 import copyToClipboard from "../../hooks/copyToClipboard";
 import { useAuth } from "../../context/AuthContext";
-import { getServerUrl } from "../../utils/getServerUrl";
 import { useGlobal } from "../../context/GlobalContext";
 
 interface UrlShareProps {

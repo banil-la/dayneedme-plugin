@@ -28,7 +28,7 @@ interface GlobalProviderProps {
 }
 
 export const GlobalProvider: React.FC<GlobalProviderProps> = ({ children }) => {
-  const [mode, setModeState] = useState<Mode>("url");
+  const [mode, setModeState] = useState<Mode>("string");
   const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);

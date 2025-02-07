@@ -13,9 +13,26 @@ import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();
-
 const TOKEN_KEY = "ACCESS_TOKEN";
 const SETTINGS_KEY = "STRING_SETTINGS";
+
+// 유틸리티 함수들
+const getCurrentFileName = () => figma.root.name;
+const sendCurrentFileName = () => {
+  const fileName = getCurrentFileName();
+  console.log("[Plugin] Sending current file name:", fileName);
+  figma.ui.postMessage({ type: "CURRENT_FILENAME", fileName });
+};
+
+const handleError = (context: string, error: unknown) => {
+  console.error(`[${context}] Error:`, error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  figma.ui.postMessage({
+    type: `${context.toUpperCase()}_ERROR`,
+    error: errorMessage,
+  });
+  return errorMessage;
+};
 
 export interface TokenData {
   access_token: string;
@@ -31,235 +48,57 @@ interface StringSettings {
   product: Product;
 }
 
-let currentMode: Mode = "default";
+// let currentMode: Mode = "default"; // 기본 모드
+let currentMode: Mode = "string"; // 임시
 
 export default function () {
-  // 윈도우 크기 조정
-  on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
-    // console.log("RESIZE_WINDOW:", { width, height });
-    figma.ui.resize(width, height);
-  });
-
-  // 토큰 저장
-  on("SAVE_TOKEN", async (token: string | TokenData) => {
-    console.log("SAVE_TOKEN received with token:", token);
-    if (
-      typeof token === "object" &&
-      token !== null &&
-      "access_token" in token
-    ) {
-      // 객체에서 access_token 추출
-      token = token.access_token;
-    }
-    if (!isValidToken(token)) {
-      figma.ui.postMessage({
-        type: "TOKEN_SAVE_ERROR",
-        error: "Invalid token",
-      });
-      return;
-    }
-    try {
-      await figma.clientStorage.setAsync(TOKEN_KEY, token);
-      console.log("Token saved successfully:");
-      figma.ui.postMessage({ type: "TOKEN_SAVED", token });
-    } catch (error) {
-      console.error("Error saving token:", error);
-      figma.ui.postMessage({
-        type: "TOKEN_SAVE_ERROR",
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  });
-
-  // 토큰 로드
-  on("LOAD_TOKEN", async () => {
-    try {
-      const token = await figma.clientStorage.getAsync(TOKEN_KEY);
-      console.log("Token loaded successfully:");
-      figma.ui.postMessage({ type: "LOADED_TOKEN", token });
-    } catch (error) {
-      console.error("Error loading token:", error);
-      figma.ui.postMessage({
-        type: "TOKEN_LOAD_ERROR",
-        error: JSON.stringify(error),
-      });
-    }
-  });
-
-  // 토큰 삭제
-  on("DELETE_TOKEN", async () => {
-    try {
-      await figma.clientStorage.deleteAsync(TOKEN_KEY);
-      console.log("Token deleted successfully");
-      figma.ui.postMessage({ type: "TOKEN_DELETED" });
-    } catch (error) {
-      console.error("Error deleting token:", error);
-      figma.ui.postMessage({
-        type: "TOKEN_DELETE_ERROR",
-        error: JSON.stringify(error),
-      });
-    }
-  });
-
-  // 공유 URL 얻기
-  on<GetUrlShareHandler>(
-    "GET_SHARE_LINK",
-    async ({ authToken, fileKey, description }) => {
-      try {
-        const selection = figma.currentPage.selection;
-        if (selection.length === 0) {
-          throw new Error("Please select a node first");
-        }
-
-        // 1. 현재 선택된 노드의 Figma URL 가져오기
-        const nodeId = selection[0].id;
-        const fileName = encodeURIComponent(figma.root.name); // 현재 파일 이름 가져오기
-        const fullUrl = `https://www.figma.com/design/${fileKey}/${fileName}?node-id=${nodeId}`;
-
-        // 2. URL에서 필요한 부분만 추출
-        const urlPart = fullUrl.split("https://www.figma.com/design/")[1];
-
-        console.log("[GET_SHARE_LINK] Creating URL:", fullUrl);
-        console.log("[GET_SHARE_LINK] URL part:", urlPart);
-
-        const response = await fetch(`${serverUrl}/api/url/create-short-url`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            file_key: fileKey,
-            url: urlPart,
-            description,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("[GET_SHARE_LINK] Error response:", errorData);
-          throw new Error(errorData.detail || "Failed to create short URL");
-        }
-
-        const data = await response.json();
-        console.log("[GET_SHARE_LINK] Response:", data);
-
-        // Figma 알림 표시
-        const message = data.isExisting
-          ? "Existing URL copied to clipboard"
-          : "New URL created and copied to clipboard";
-        figma.notify(message);
-
-        emit("SHARE_LINK", data);
-      } catch (error) {
-        console.error("[GET_SHARE_LINK] Error:", error);
-        // 에러 메시지도 Figma 알림으로 표시
-        figma.notify(
-          `Error: ${error instanceof Error ? error.message : String(error)}`,
-          { error: true }
-        );
-        emit(
-          "SHARE_LINK_ERROR",
-          error instanceof Error ? error.message : String(error)
-        );
-      }
-    }
-  );
-
-  // 디버그: clientStorage 상태 확인
-  on("DEBUG_CLIENT_STORAGE", async () => {
-    try {
-      const storedToken = await figma.clientStorage.getAsync(TOKEN_KEY);
-      console.log("DEBUG: Stored token in clientStorage:", storedToken);
-    } catch (error) {
-      console.error("DEBUG: Error reading clientStorage:", error);
-    }
-  });
-
-  // 설정 저장
-  on("SAVE_STRING_SETTINGS", async (settings: StringSettings) => {
-    try {
-      await figma.clientStorage.setAsync(SETTINGS_KEY, settings);
-      figma.ui.postMessage({
-        type: "STRING_SETTINGS_SAVED",
-        settings,
-      });
-    } catch (error) {
-      console.error("Error saving string settings:", error);
-      figma.ui.postMessage({
-        type: "STRING_SETTINGS_SAVE_ERROR",
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-  });
-
-  // 설정 로드
-  on("LOAD_STRING_SETTINGS", async () => {
-    try {
-      const settings = await figma.clientStorage.getAsync(SETTINGS_KEY);
-      figma.ui.postMessage({
-        type: "STRING_SETTINGS_LOADED",
-        settings,
-      });
-    } catch (error) {
-      console.error("Error loading string settings:", error);
-      figma.ui.postMessage({
-        type: "STRING_SETTINGS_LOAD_ERROR",
-        error: JSON.stringify(error),
-      });
-    }
-  });
-
-  // 텍스트 선택 상태 확인
-  on("GET_SELECTED_TEXT", () => {
-    checkSelection();
-  });
-
-  // 선택 변경 감지
-  figma.on("selectionchange", () => {
-    checkSelection();
-  });
-
-  // 모드 설정 핸들러 추가
-  on<SetModeHandler>("SET_MODE", (mode) => {
-    currentMode = mode;
-    checkSelection(); // 모드가 변경될 때 현재 선택 상태 체크
-  });
-
   // 선택 상태 체크 및 이벤트 발생
   function checkSelection() {
     try {
       const selection = figma.currentPage.selection;
+      console.log("[main] Checking selection:", {
+        mode: currentMode,
+        selectionLength: selection.length,
+        selectionTypes: selection.map((node) => node.type),
+      });
 
       if (currentMode === "string") {
-        // string 모드: 텍스트 노드 찾기
-        const textNode = selection.find((node) => node.type === "TEXT");
-        emit("SELECTION_CHANGED", textNode ? textNode.characters : null);
+        // string 모드: 텍스트 노드가 선택된 경우에만 이벤트 발생
+        if (selection.length === 1 && selection[0].type === "TEXT") {
+          console.log(
+            "[main] Emitting text selection:",
+            selection[0].characters
+          );
+          emit("SELECTION_CHANGED", selection[0].characters);
+        } else {
+          console.log("[main] Emitting null selection in string mode");
+          emit("SELECTION_CHANGED", null);
+        }
       } else if (currentMode === "url") {
         // url 모드: 프레임/레이어 선택 여부
+        console.log(
+          "[main] Emitting URL mode selection state:",
+          selection.length > 0
+        );
         emit("SELECTION_CHANGED", selection.length > 0);
       }
     } catch (error) {
-      console.error("[checkSelection] Error:", error);
+      console.error("[main] Error in checkSelection:", error);
       emit("SELECTION_CHANGED", null);
     }
   }
 
   // 파일키 정보 확인
   const checkFileKey = async (authToken: string) => {
-    const fileName = figma.root.name;
+    const fileName = getCurrentFileName();
     console.log("[checkFileKey] Starting file key check for:", fileName);
 
     try {
       const url = `${serverUrl}/api/filekey/get-file-key?filename=${encodeURIComponent(
         fileName
       )}`;
-      console.log("[checkFileKey] Requesting URL:", url);
-
       const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       if (!response.ok) {
@@ -278,80 +117,81 @@ export default function () {
         },
       });
     } catch (error) {
-      console.error("[checkFileKey] Error:", error);
+      handleError("checkFileKey", error);
     }
   };
 
-  // 토큰이 로드되면 파일키 확인
-  on("TOKEN_LOADED", (token: string) => {
-    checkFileKey(token);
+  // 이벤트 핸들러 등록
+  on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
+    figma.ui.resize(width, height);
   });
 
-  // 초기 모드 설정
-  currentMode = "url";
-
-  // 파일명 비교 핸들러
-  on("COMPARE_FILENAME", (data: { selectedTitle: string }) => {
-    const currentFileName = figma.root.name;
-    const isMismatch = data.selectedTitle !== currentFileName;
-    figma.ui.postMessage({
-      type: "FILENAME_COMPARE_RESULT",
-      isMismatch,
-      currentFileName,
-    });
+  on("SAVE_TOKEN", async (token: string | TokenData) => {
+    if (
+      typeof token === "object" &&
+      token !== null &&
+      "access_token" in token
+    ) {
+      token = token.access_token;
+    }
+    if (!isValidToken(token)) {
+      handleError("TOKEN_SAVE", "Invalid token");
+      return;
+    }
+    try {
+      await figma.clientStorage.setAsync(TOKEN_KEY, token);
+      figma.ui.postMessage({ type: "TOKEN_SAVED", token });
+    } catch (error) {
+      handleError("TOKEN_SAVE", error);
+    }
   });
 
-  // UI 초기화 시 현재 파일명 전달
-  figma.once("run", () => {
-    const currentFileName = figma.root.name;
-    console.log("[Plugin] Initial file name:", currentFileName);
+  on("LOAD_TOKEN", async () => {
+    try {
+      const token = await figma.clientStorage.getAsync(TOKEN_KEY);
+      figma.ui.postMessage({ type: "LOADED_TOKEN", token });
+    } catch (error) {
+      handleError("TOKEN_LOAD", error);
+    }
+  });
 
-    figma.ui.postMessage({
-      type: "CURRENT_FILENAME",
-      fileName: currentFileName,
-    });
+  on("DELETE_TOKEN", async () => {
+    try {
+      await figma.clientStorage.deleteAsync(TOKEN_KEY);
+      figma.ui.postMessage({ type: "TOKEN_DELETED" });
+    } catch (error) {
+      handleError("TOKEN_DELETE", error);
+    }
+  });
 
+  on("GET_SELECTED_TEXT", checkSelection);
+  figma.on("selectionchange", checkSelection);
+  on<SetModeHandler>("SET_MODE", (mode) => {
+    currentMode = mode;
     checkSelection();
   });
 
-  // 파일명 요청 처리
-  on("GET_CURRENT_FILENAME", () => {
-    const currentFileName = figma.root.name;
-    console.log(
-      "[Plugin] Sending current file name on request:",
-      currentFileName
-    );
-
-    figma.ui.postMessage({
-      type: "CURRENT_FILENAME",
-      fileName: currentFileName,
-    });
-  });
-
-  // CHECK_FILE_KEY 메시지 처리
+  on("TOKEN_LOADED", checkFileKey);
+  on("GET_CURRENT_FILENAME", sendCurrentFileName);
   on("CHECK_FILE_KEY", () => {
-    const currentFileName = figma.root.name;
-    console.log("[Plugin] Checking file key for:", currentFileName);
-
-    // 현재 토큰이 있다면 파일키 확인 실행
     figma.clientStorage
       .getAsync(TOKEN_KEY)
-      .then((token) => {
-        if (token) {
-          checkFileKey(token);
-        }
-      })
-      .catch((error) => {
-        console.error("[Plugin] Error checking file key:", error);
-      });
+      .then((token) => token && checkFileKey(token))
+      .catch((error) => handleError("CHECK_FILE_KEY", error));
+  });
+
+  // 초기화
+  figma.once("run", () => {
+    console.log("[Plugin] Starting with:", {
+      fileName: getCurrentFileName(),
+      mode: currentMode,
+    });
+    sendCurrentFileName();
+    checkSelection();
   });
 
   showUI({
     height: plugin.size.height,
     width: plugin.size.width,
   });
-
-  if (figma) {
-    console.log(`** FIGMA: ${figma.root.name}`);
-  }
 }
