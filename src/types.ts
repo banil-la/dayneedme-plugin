@@ -21,7 +21,7 @@ export interface DeleteTokenHandler extends EventHandler {
   handler: () => void;
 }
 
-export interface GetShareLinkHandler extends EventHandler {
+export interface GetUrlShareHandler extends EventHandler {
   name: "GET_SHARE_LINK";
   handler: (data: {
     authToken: string;
@@ -44,7 +44,7 @@ export interface LoadStringSettingsHandler extends EventHandler {
   handler: () => void;
 }
 
-export interface ShareLinkErrorHandler extends EventHandler {
+export interface UrlShareErrorHandler extends EventHandler {
   name: "SHARE_LINK_ERROR";
   handler: (error: string) => void;
 }
@@ -99,3 +99,28 @@ export interface SetModeHandler extends EventHandler {
   name: "SET_MODE";
   handler: (mode: Mode) => void;
 }
+
+export interface CompareFilenameHandler extends EventHandler {
+  name: "COMPARE_FILENAME";
+  handler: (data: { selectedTitle: string }) => void;
+}
+
+export interface FilenameCompareResultHandler extends EventHandler {
+  name: "FILENAME_COMPARE_RESULT";
+  handler: (result: { isMismatch: boolean }) => void;
+}
+
+export const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+
+  const year = date.getFullYear().toString().slice(2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  const hours = date.getHours();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHours = String(hours % 12 || 12).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}.${month}.${day} ${ampm} ${displayHours}:${minutes}`;
+};

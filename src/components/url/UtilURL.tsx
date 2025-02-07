@@ -1,11 +1,11 @@
 // src/components/mode/UtilURL.tsx
 
 import { h } from "preact";
-import RecentUrls from "./RecentUrls";
+import UrlRecents from "./UrlRecents";
 import { useState, useEffect } from "preact/hooks";
 import { useGlobal } from "../../context/GlobalContext";
-import CreateShortUrl from "./ShareLink";
-import FileKeySelector from "./FileKeySelector";
+import CreateShortUrl from "./UrlShare";
+import UrlFigmaStatus from "./UrlFigmaStatus";
 
 const UtilURL: React.FC = () => {
   const { mode } = useGlobal();
@@ -48,9 +48,9 @@ const UtilURL: React.FC = () => {
 
   return (
     <div className="p-3 flex flex-col gap-3">
-      <FileKeySelector />
+      <UrlFigmaStatus />
       <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
-      <RecentUrls refreshKey={refreshKey} />
+      <UrlRecents refreshKey={refreshKey} />
     </div>
   );
 };

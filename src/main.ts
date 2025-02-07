@@ -2,7 +2,7 @@
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import {
-  GetShareLinkHandler,
+  GetUrlShareHandler,
   OS,
   Product,
   ResizeWindowHandler,
@@ -102,7 +102,7 @@ export default function () {
   });
 
   // 공유 URL 얻기
-  on<GetShareLinkHandler>(
+  on<GetUrlShareHandler>(
     "GET_SHARE_LINK",
     async ({ authToken, fileKey, description }) => {
       try {
@@ -290,14 +290,44 @@ export default function () {
   // 초기 모드 설정
   currentMode = "url";
 
+  // 파일명 비교 핸들러
+  on("COMPARE_FILENAME", (data: { selectedTitle: string }) => {
+    const currentFileName = figma.root.name;
+    const isMismatch = data.selectedTitle !== currentFileName;
+    figma.ui.postMessage({
+      type: "FILENAME_COMPARE_RESULT",
+      isMismatch,
+      currentFileName,
+    });
+  });
+
+  // UI 초기화 시 현재 파일명 전달
+  figma.once("run", () => {
+    const currentFileName = figma.root.name;
+    console.log("[Plugin] Current file name:", currentFileName);
+
+    figma.ui.postMessage({
+      type: "CURRENT_FILENAME",
+      fileName: currentFileName,
+    });
+
+    checkSelection();
+  });
+
+  // 파일명이 변경될 때마다 UI에 알림
+  figma.on("documentchange", () => {
+    const currentFileName = figma.root.name;
+    console.log("[Plugin] File name changed:", currentFileName);
+
+    figma.ui.postMessage({
+      type: "CURRENT_FILENAME",
+      fileName: currentFileName,
+    });
+  });
+
   showUI({
     height: plugin.size.height,
     width: plugin.size.width,
-  });
-
-  // UI가 생성된 직후 초기 선택 상태 체크
-  figma.once("run", () => {
-    checkSelection();
   });
 
   if (figma) {

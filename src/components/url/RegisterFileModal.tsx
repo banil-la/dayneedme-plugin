@@ -1,0 +1,124 @@
+import { h } from "preact";
+import { useState, useEffect } from "preact/hooks";
+
+interface RegisterFileModalProps {
+  onClose: () => void;
+  onSubmit: (url: string) => void;
+}
+
+const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
+  onClose,
+  onSubmit,
+}) => {
+  const [url, setUrl] = useState("");
+  const [extractedKey, setExtractedKey] = useState<string | null>(null);
+
+  // URL이 변경될 때마다 파일키 추출 시도
+  useEffect(() => {
+    if (!url) {
+      setExtractedKey(null);
+      return;
+    }
+
+    try {
+      // file/ 또는 design/ 패턴 모두 처리
+      const match = url.match(/(?:file|design)\/([^/?]+)/);
+      if (match) {
+        setExtractedKey(match[1]);
+        console.log("[RegisterFileModal] Extracted file key:", match[1]);
+      } else {
+        setExtractedKey(null);
+      }
+    } catch (error) {
+      setExtractedKey(null);
+    }
+  }, [url]);
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+    console.log(
+      "[RegisterFileModal] Submit clicked, extractedKey:",
+      extractedKey
+    );
+    if (extractedKey) {
+      console.log(
+        "[RegisterFileModal] Calling onSubmit with key:",
+        extractedKey
+      );
+      onSubmit(extractedKey);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg p-6 w-96 max-w-full">
+        <h2 className="text-lg font-bold mb-4">파일 등록</h2>
+
+        <div className="mb-6">
+          <p className="text-sm text-gray-600 mb-4">
+            1. Figma 파일의 <strong>Share</strong> 버튼을 클릭하세요.
+          </p>
+          <p className="text-sm text-gray-600 mb-4">
+            2. <strong>Copy link</strong> 버튼을 클릭하여 링크를 복사하세요.
+          </p>
+          <p className="text-sm text-gray-600 mb-4">
+            3. 아래에 복사한 링크를 붙여넣으세요.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => {
+              console.log(
+                "[RegisterFileModal] URL input changed:",
+                e.currentTarget.value
+              );
+              setUrl(e.currentTarget.value);
+            }}
+            placeholder="https://www.figma.com/file/... 또는 design/..."
+            className="w-full p-2 border rounded mb-4"
+          />
+
+          {/* 추출된 파일키 표시 */}
+          {url && (
+            <div className="mb-4 p-3 bg-gray-100 rounded">
+              <p className="text-sm text-gray-600">추출된 파일키:</p>
+              <p className="font-mono text-sm">
+                {extractedKey || "유효하지 않은 URL입니다"}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              disabled={!extractedKey}
+              onClick={(e) => {
+                console.log("[RegisterFileModal] Register button clicked");
+                handleSubmit(e as Event);
+              }}
+              className={`px-4 py-2 rounded text-sm ${
+                extractedKey
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
+            >
+              등록
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default RegisterFileModal;

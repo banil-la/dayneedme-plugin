@@ -6,11 +6,11 @@ import { useAuth } from "../../context/AuthContext";
 import { getServerUrl } from "../../utils/getServerUrl";
 import { useGlobal } from "../../context/GlobalContext";
 
-interface ShareLinkProps {
+interface UrlShareProps {
   onUpdateRecentUrls: () => void;
 }
 
-const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
+const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
   const { authToken } = useAuth();
   const { fileKeyInfo } = useGlobal();
   const [shortUrl, setShortUrl] = useState<string | null>(null);
@@ -19,7 +19,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   const [description, setDescription] = useState<string>("");
   const [isFrameSelected, setIsFrameSelected] = useState(false);
 
-  const handleShareLink = () => {
+  const handleUrlShare = () => {
     emit("GET_SHARE_LINK", {
       authToken,
       fileKey: fileKeyInfo?.fileKey,
@@ -61,7 +61,7 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
 
     setIsLoading(true);
     setShortUrl(null);
-    handleShareLink();
+    handleUrlShare();
   };
 
   // 버튼 활성화 조건 체크
@@ -116,4 +116,4 @@ const ShareLink: React.FC<ShareLinkProps> = ({ onUpdateRecentUrls }) => {
   );
 };
 
-export default ShareLink;
+export default UrlShare;
