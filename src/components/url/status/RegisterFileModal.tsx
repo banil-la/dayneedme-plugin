@@ -1,5 +1,6 @@
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
+import { emit, on } from "@create-figma-plugin/utilities";
 
 interface RegisterFileModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
 }) => {
   const [url, setUrl] = useState("");
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState(currentFileName);
 
   // URL이 변경될 때마다 파일키 추출 시도
   useEffect(() => {
@@ -43,6 +45,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
       extractedKey
     );
     if (extractedKey) {
+      refreshCurrentFileName(); // 파일명 새로 고침
       console.log(
         "[RegisterFileModal] Calling onSubmit with key:",
         extractedKey
@@ -51,6 +54,26 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     }
   };
 
+  const refreshCurrentFileName = () => {
+    emit("GET_CURRENT_FILENAME");
+  };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data.pluginMessage;
+      if (message?.type === "CURRENT_FILENAME") {
+        console.log(
+          "[RegisterFileModal] Received current file name:",
+          message.fileName
+        );
+        setCurrentFile(message.fileName);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 w-96 max-w-full">
@@ -58,7 +81,13 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
 
         <div className="mb-4">
           <p className="text-sm font-medium mb-1">현재 파일:</p>
-          <p className="text-sm bg-gray-100 p-2 rounded">{currentFileName}</p>
+          <p className="text-sm bg-gray-100 p-2 rounded">{currentFile}</p>
+          <button
+            onClick={refreshCurrentFileName}
+            className="text-sm text-blue-500 hover:text-blue-700 font-medium mt-2"
+          >
+            파일명 새로고침
+          </button>
         </div>
 
         <div className="mb-6">

@@ -5,7 +5,7 @@ import UrlRecents from "./UrlRecents";
 import { useState, useEffect } from "preact/hooks";
 import { useGlobal } from "../../context/GlobalContext";
 import CreateShortUrl from "./UrlShare";
-import UrlFigmaStatus from "./UrlFigmaStatus";
+import URLStatus from "./status/URLStatus";
 
 const UtilURL: React.FC = () => {
   const { mode } = useGlobal();
@@ -48,7 +48,7 @@ const UtilURL: React.FC = () => {
 
   return (
     <div className="p-3 flex flex-col gap-3">
-      <UrlFigmaStatus />
+      <URLStatus />
       <CreateShortUrl onUpdateRecentUrls={handleUpdateRecentUrls} />
       <UrlRecents refreshKey={refreshKey} />
     </div>

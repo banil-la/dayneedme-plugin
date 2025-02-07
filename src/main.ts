@@ -251,7 +251,7 @@ export default function () {
     console.log("[checkFileKey] Starting file key check for:", fileName);
 
     try {
-      const url = `${serverUrl}/api/url/get-file-key?filename=${encodeURIComponent(
+      const url = `${serverUrl}/api/filekey/get-file-key?filename=${encodeURIComponent(
         fileName
       )}`;
       console.log("[checkFileKey] Requesting URL:", url);
@@ -304,7 +304,7 @@ export default function () {
   // UI 초기화 시 현재 파일명 전달
   figma.once("run", () => {
     const currentFileName = figma.root.name;
-    console.log("[Plugin] Current file name:", currentFileName);
+    console.log("[Plugin] Initial file name:", currentFileName);
 
     figma.ui.postMessage({
       type: "CURRENT_FILENAME",
@@ -312,17 +312,6 @@ export default function () {
     });
 
     checkSelection();
-  });
-
-  // 파일명이 변경될 때마다 UI에 알림
-  figma.on("documentchange", () => {
-    const currentFileName = figma.root.name;
-    console.log("[Plugin] File name changed:", currentFileName);
-
-    figma.ui.postMessage({
-      type: "CURRENT_FILENAME",
-      fileName: currentFileName,
-    });
   });
 
   // 파일명 요청 처리
@@ -337,6 +326,24 @@ export default function () {
       type: "CURRENT_FILENAME",
       fileName: currentFileName,
     });
+  });
+
+  // CHECK_FILE_KEY 메시지 처리
+  on("CHECK_FILE_KEY", () => {
+    const currentFileName = figma.root.name;
+    console.log("[Plugin] Checking file key for:", currentFileName);
+
+    // 현재 토큰이 있다면 파일키 확인 실행
+    figma.clientStorage
+      .getAsync(TOKEN_KEY)
+      .then((token) => {
+        if (token) {
+          checkFileKey(token);
+        }
+      })
+      .catch((error) => {
+        console.error("[Plugin] Error checking file key:", error);
+      });
   });
 
   showUI({

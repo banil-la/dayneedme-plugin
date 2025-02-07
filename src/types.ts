@@ -112,6 +112,11 @@ export interface FilenameCompareResultHandler extends EventHandler {
   handler: (result: { isMismatch: boolean }) => void;
 }
 
+export interface FileNameChangedHandler extends EventHandler {
+  name: "CURRENT_FILENAME";
+  handler: (fileName: string) => void;
+}
+
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
 

@@ -32,7 +32,6 @@ const App: React.FC = () => {
   return (
     <div className="text-base w-full h-full overflow-x-hidden">
       <Profile />
-      {/* <SettingsSelector /> */}
       <Utils />
       {renderModeContent()}
     </div>
