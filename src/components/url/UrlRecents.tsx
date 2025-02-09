@@ -39,7 +39,7 @@ const UrlRecents: React.FC<UrlRecentssProps> = ({ refreshKey }) => {
         return;
       }
 
-      const url = `${serverUrl}/api/url/recent-urls?page=${page}&page_size=5&file_key=${fileKeyInfo.fileKey}`;
+      const url = `${serverUrl}/api/url?page=${page}&page_size=5&file_key=${fileKeyInfo.fileKey}`;
       console.log("[UrlRecentss] Request URL:", url);
 
       const response = await fetch(url, {
@@ -63,6 +63,33 @@ const UrlRecents: React.FC<UrlRecentssProps> = ({ refreshKey }) => {
       console.error("[UrlRecentss] Error fetching recent URLs:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createShortUrl = async (url: string, fileKey: string) => {
+    try {
+      const response = await fetch(`${serverUrl}/api/url/create-short-url`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url,
+          file_key: fileKey,
+          description: "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create short URL");
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error creating short URL:", error);
+      throw error;
     }
   };
 

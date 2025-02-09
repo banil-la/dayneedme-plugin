@@ -30,7 +30,7 @@ const StatusView: React.FC<StatusViewProps> = ({
   onFileKeyExtract,
 }) => {
   return (
-    <div className="p-2 bg-gray-100 rounded">
+    <div className="p-2 bg-base-100 rounded">
       {isLoading ? (
         <p className="text-black text-opacity-50 font-medium">Loading...</p>
       ) : fileKeyInfo?.isFromDatabase && !isFileNameMismatch ? (

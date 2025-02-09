@@ -4,6 +4,7 @@ import { emit } from "@create-figma-plugin/utilities";
 import copyToClipboard from "../../hooks/copyToClipboard";
 import { useAuth } from "../../context/AuthContext";
 import { useGlobal } from "../../context/GlobalContext";
+import { getServerUrl } from "../../utils/getServerUrl";
 
 interface UrlShareProps {
   onUpdateRecentUrls: () => void;
@@ -47,7 +48,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
     return () => window.removeEventListener("message", handleMessage);
   }, [authToken, onUpdateRecentUrls]);
 
-  const handleGenerateShortUrl = () => {
+  const handleGenerateShortUrl = async () => {
     if (isLoading) return;
     if (!fileKeyInfo?.fileKey || !fileKeyInfo?.fileName) {
       setError("Please select a file first");
@@ -60,7 +61,36 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
 
     setIsLoading(true);
     setShortUrl(null);
-    handleUrlShare();
+
+    try {
+      const response = await fetch(`${getServerUrl()}/api/url/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: fileKeyInfo.fileKey,
+          file_key: fileKeyInfo.fileKey,
+          description: description.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create URL");
+      }
+
+      const data = await response.json();
+      setShortUrl(data.short_url);
+      copyToClipboard(data.short_url);
+      onUpdateRecentUrls();
+      setDescription("");
+    } catch (error) {
+      console.error("Error creating URL:", error);
+      setError(error instanceof Error ? error.message : "Failed to create URL");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 버튼 활성화 조건 체크

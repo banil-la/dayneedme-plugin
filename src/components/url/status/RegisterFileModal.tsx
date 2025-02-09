@@ -1,6 +1,8 @@
 import { h } from "preact";
 import { useState, useEffect } from "preact/hooks";
-import { emit, on } from "@create-figma-plugin/utilities";
+import { emit, on, once } from "@create-figma-plugin/utilities";
+import { getServerUrl } from "../../../utils/getServerUrl";
+import { useAuth } from "../../../context/AuthContext";
 
 interface RegisterFileModalProps {
   onClose: () => void;
@@ -13,6 +15,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
   onSubmit,
   currentFileName,
 }) => {
+  const { authToken } = useAuth();
   const [url, setUrl] = useState("");
   const [extractedKey, setExtractedKey] = useState<string | null>(null);
   const [currentFile, setCurrentFile] = useState(currentFileName);
@@ -74,14 +77,73 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const handleRegister = async () => {
+    if (!authToken) {
+      console.error("No auth token available");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${getServerUrl()}/api/filekey/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: extractedKey,
+          title: currentFileName,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to register file key");
+      }
+
+      const data = await response.json();
+      // 등록 성공 처리
+    } catch (error) {
+      console.error("Error registering file key:", error);
+    }
+  };
+
+  const getShareLink = async () => {
+    try {
+      emit("GET_SHARE_LINK");
+    } catch (error) {
+      console.error("Error requesting share link:", error);
+    }
+  };
+
+  useEffect(() => {
+    const handleShareLink = (event: MessageEvent) => {
+      const message = event.data.pluginMessage;
+      if (message?.type === "SHARE_LINK_RECEIVED") {
+        if (message.link) {
+          setUrl(message.link);
+        } else {
+          console.log("No share link available");
+        }
+      }
+    };
+
+    window.addEventListener("message", handleShareLink);
+    return () => window.removeEventListener("message", handleShareLink);
+  }, []);
+
+  // 자동으로 공유 링크 가져오기 시도
+  useEffect(() => {
+    getShareLink();
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-6 w-96 max-w-full">
+      <div className="bg-base-100 rounded-lg p-6 w-96 max-w-full">
         <h2 className="text-lg font-bold mb-4">파일 등록</h2>
 
         <div className="mb-4">
           <p className="text-sm font-medium mb-1">현재 파일:</p>
-          <p className="text-sm bg-gray-100 p-2 rounded">{currentFile}</p>
+          <p className="text-sm bg-base-300 p-2 rounded">{currentFile}</p>
           <button
             onClick={refreshCurrentFileName}
             className="text-sm text-blue-500 hover:text-blue-700 font-medium mt-2"
@@ -119,7 +181,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
 
           {/* 추출된 파일키 표시 */}
           {url && (
-            <div className="mb-4 p-3 bg-gray-100 rounded">
+            <div className="mb-4 p-3 bg-base-300 rounded">
               <p className="text-sm text-gray-600">추출된 파일키:</p>
               <p className="font-mono text-sm">
                 {extractedKey || "유효하지 않은 URL입니다"}

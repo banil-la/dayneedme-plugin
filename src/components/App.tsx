@@ -11,7 +11,7 @@ import UtilURL from "./url/UtilURL";
 // import SettingsSelector from "./SettingsSelector";
 
 const App: React.FC = () => {
-  const { authToken } = useAuth();
+  const { authToken, user } = useAuth();
   const { mode } = useGlobal();
 
   if (!authToken) {
@@ -31,6 +31,11 @@ const App: React.FC = () => {
 
   return (
     <div className="text-base w-full h-full overflow-x-hidden">
+      <div class="absolute top-0 left-0 bg-red-500 bg-opacity-50">
+        <p>DEV</p>
+
+        {/* <p>{JSON.stringify(user)}</p> */}
+      </div>
       <Profile />
       <Utils />
       {renderModeContent()}

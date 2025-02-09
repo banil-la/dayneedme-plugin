@@ -31,14 +31,11 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
   useEffect(() => {
     const loadFileList = async () => {
       try {
-        const response = await fetch(
-          `${getServerUrl()}/api/filekey/available-filekeys`,
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
+        const response = await fetch(`${getServerUrl()}/api/filekey/`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("파일 목록을 불러오는데 실패했습니다.");

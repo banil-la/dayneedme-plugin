@@ -180,6 +180,51 @@ export default function () {
       .catch((error) => handleError("CHECK_FILE_KEY", error));
   });
 
+  // 문자열 설정 저장 핸들러 추가
+  on("SAVE_STRING_SETTINGS", async function (settings) {
+    await figma.clientStorage.setAsync("stringSettings", settings);
+    emit("STRING_SETTINGS_SAVED", settings);
+  });
+
+  // 문자열 설정 로드 핸들러 추가
+  on("LOAD_STRING_SETTINGS", async function () {
+    try {
+      const settings = await figma.clientStorage.getAsync("stringSettings");
+      emit("STRING_SETTINGS_LOADED", settings);
+    } catch (error) {
+      handleError("STRING_SETTINGS_LOAD", error);
+    }
+  });
+
+  // 공유 링크 가져오기 핸들러 추가
+  on("GET_SHARE_LINK", async function () {
+    try {
+      // 현재 파일의 URL 가져오기
+      const url =
+        figma.currentPage.parent?.parent?.getPluginData("url") ||
+        figma.currentPage.parent?.getPluginData("url") ||
+        figma.root.getPluginData("url");
+
+      // 객체 형태로 메시지 전송
+      figma.ui.postMessage({
+        pluginMessage: {
+          // pluginMessage 객체로 감싸기
+          type: "SHARE_LINK_RECEIVED",
+          link: url || null,
+        },
+      });
+    } catch (error) {
+      console.error("Error getting share link:", error);
+      figma.ui.postMessage({
+        pluginMessage: {
+          // pluginMessage 객체로 감싸기
+          type: "SHARE_LINK_RECEIVED",
+          link: null,
+        },
+      });
+    }
+  });
+
   // 초기화
   figma.once("run", () => {
     console.log("[Plugin] Starting with:", {

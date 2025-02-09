@@ -3,8 +3,6 @@ import { useEffect, useState } from "preact/hooks";
 import { useGlobal } from "../../../context/GlobalContext";
 import { useAuth } from "../../../context/AuthContext";
 import { getServerUrl } from "../../../utils/getServerUrl";
-import RegisterFileModal from "./RegisterFileModal";
-import SearchFileModal from "./SearchFileModal";
 import UrlFigmaStatusView from "./StatusView";
 
 const URLStatus: React.FC = () => {
@@ -29,7 +27,7 @@ const URLStatus: React.FC = () => {
 
       try {
         const response = await fetch(
-          `${getServerUrl()}/api/url/get-file-key?filename=${encodeURIComponent(
+          `${getServerUrl()}/api/filekey/${encodeURIComponent(
             currentFileName
           )}`,
           {
@@ -85,25 +83,20 @@ const URLStatus: React.FC = () => {
         return;
       }
 
-      console.log("[URLStatus] Registering file:", {
-        fileKey,
-        fileName: currentFileName,
-      });
+      const requestData = {
+        id: fileKey,
+        title: currentFileName,
+      };
+      console.log("[URLStatus] Sending request with data:", requestData);
 
-      const response = await fetch(
-        `${getServerUrl()}/api/filekey/register-filekey`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            fileKey,
-            fileName: currentFileName.trim(),
-          }),
-        }
-      );
+      const response = await fetch(`${getServerUrl()}/api/filekey/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
 
       const responseText = await response.text();
       console.log("[URLStatus] Raw response:", responseText);
@@ -127,6 +120,7 @@ const URLStatus: React.FC = () => {
         fileKey: data.fileKey,
         isFromDatabase: data.isFromDatabase,
       });
+      console.log("[URLStatus] FileKeyInfo updated");
 
       setIsModalOpen(false);
     } catch (error) {

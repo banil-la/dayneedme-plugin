@@ -221,3 +221,25 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+const getUserInfo = async (token: string) => {
+  try {
+    const response = await fetch(`${getServerUrl()}/api/auth/get-user-info`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to get user info");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error getting user info:", error);
+    throw error;
+  }
+};
