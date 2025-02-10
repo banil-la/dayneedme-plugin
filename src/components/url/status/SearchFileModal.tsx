@@ -3,7 +3,7 @@ import { useState, useEffect } from "preact/hooks";
 import { useAuth } from "../../../context/AuthContext";
 import { useGlobal } from "../../../context/GlobalContext";
 import { getServerUrl } from "../../../utils/getServerUrl";
-import { emit, on } from "@create-figma-plugin/utilities";
+import { emit } from "@create-figma-plugin/utilities";
 import Select from "react-select";
 
 interface SearchFileModalProps {
@@ -27,11 +27,11 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
   const [fileList, setFileList] = useState<FileKeyItem[]>([]);
   const [currentFile, setCurrentFile] = useState(currentFileName);
 
-  // 등록된 파일 목록 로드
   useEffect(() => {
+    // 등록된 파일 목록 로드
     const loadFileList = async () => {
       try {
-        const response = await fetch(`${getServerUrl()}/api/filekey/`, {
+        const response = await fetch(`${getServerUrl()}/api/filekey/list`, {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
@@ -57,7 +57,46 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
     loadFileList();
   }, [authToken]);
 
+  useEffect(() => {
+    // 초기 로딩 시 현재 파일명 가져오기
+    refreshCurrentFileName();
+
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data.pluginMessage;
+      if (message?.type === "CURRENT_FILENAME") {
+        console.log(
+          "[SearchFileModal] Received current file name:",
+          message.fileName
+        );
+        if (message.fileName) {
+          setCurrentFile(message.fileName);
+          setError(null);
+        } else {
+          setError(
+            "현재 파일명을 가져올 수 없습니다. 새로고침을 시도해주세요."
+          );
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const refreshCurrentFileName = () => {
+    console.log("[SearchFileModal] Refreshing current file name");
+    setError(null);
+    emit("GET_CURRENT_FILENAME");
+  };
+
   const handleSelect = async (fileKey: string, fileName: string) => {
+    if (!currentFile) {
+      setError(
+        "현재 파일명을 가져올 수 없습니다. 새로고침 후 다시 시도해주세요."
+      );
+      return;
+    }
+
     const confirmUpdate = confirm(
       `Supabase에 등록된 파일명을 현재 파일명 '${currentFile}'으로 변경하시겠습니까?`
     );
@@ -65,7 +104,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
     if (confirmUpdate) {
       try {
         const response = await fetch(
-          `${getServerUrl()}/api/filekey/update-filekey`,
+          `${getServerUrl()}/api/filekey/${fileKey}`,
           {
             method: "PUT",
             headers: {
@@ -73,8 +112,8 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              fileKey,
-              fileName: currentFile,
+              id: fileKey,
+              title: currentFile,
             }),
           }
         );
@@ -85,41 +124,22 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
 
         const data = await response.json();
         console.log("[SearchFileModal] File name updated successfully:", data);
-        setFileKeyInfo({
-          fileName: currentFile,
-          fileKey,
-          isFromDatabase: true,
-        });
+        if (data) {
+          setFileKeyInfo({
+            fileName: currentFile,
+            fileKey,
+          });
+        } else {
+          setFileKeyInfo(null);
+        }
         onClose();
       } catch (error) {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했습니다."
-        );
+        console.error("[SearchFileModal] Error updating file name:", error);
+        setFileKeyInfo(null);
+        onClose();
       }
     }
   };
-
-  const refreshCurrentFileName = () => {
-    emit("GET_CURRENT_FILENAME");
-  };
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data.pluginMessage;
-      if (message?.type === "CURRENT_FILENAME") {
-        console.log(
-          "[SearchFileModal] Received current file name:",
-          message.fileName
-        );
-        setCurrentFile(message.fileName);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
 
   const options = fileList.map((file) => ({
     value: file.id,
@@ -132,14 +152,23 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
         <h2 className="text-lg font-bold mb-4">등록된 피그마 찾기</h2>
 
         <div className="mb-4">
-          <p className="text-sm font-medium mb-1">현재 파일:</p>
-          <p className="text-sm bg-gray-100 p-2 rounded">{currentFile}</p>
-          <button
-            onClick={refreshCurrentFileName}
-            className="text-sm text-blue-500 hover:text-blue-700 font-medium mt-2"
-          >
-            파일명 새로고침
-          </button>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium">현재 파일:</p>
+            <button
+              onClick={refreshCurrentFileName}
+              className="text-sm text-blue-500 hover:text-blue-700 font-medium"
+              title="파일명 새로고침"
+            >
+              🔄 새로고침
+            </button>
+          </div>
+          {currentFile ? (
+            <p className="text-sm bg-gray-100 p-2 rounded">{currentFile}</p>
+          ) : (
+            <p className="text-sm text-red-500 bg-red-50 p-2 rounded">
+              파일명을 가져올 수 없습니다. 새로고침을 눌러주세요.
+            </p>
+          )}
         </div>
 
         <Select
@@ -156,9 +185,14 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
           }}
           placeholder="파일명 선택..."
           className="mb-4"
+          isDisabled={!currentFile}
         />
 
-        {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+        {error && (
+          <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
+            {error}
+          </div>
+        )}
 
         <div className="flex justify-end gap-2">
           <button

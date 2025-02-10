@@ -14,6 +14,7 @@ interface StatusViewProps {
   isModalOpen: boolean;
   isSearchModalOpen: boolean;
   onFileKeyExtract: (fileKey: string) => void;
+  onRefreshMatch: () => void;
 }
 
 const StatusView: React.FC<StatusViewProps> = ({
@@ -28,21 +29,40 @@ const StatusView: React.FC<StatusViewProps> = ({
   isModalOpen,
   isSearchModalOpen,
   onFileKeyExtract,
+  onRefreshMatch,
 }) => {
   return (
     <div className="p-2 bg-base-100 rounded">
       {isLoading ? (
         <p className="text-black text-opacity-50 font-medium">Loading...</p>
-      ) : fileKeyInfo?.isFromDatabase && !isFileNameMismatch ? (
-        <p>
-          <span className="font-medium">✓ File Name:</span>{" "}
-          <span>{fileKeyInfo.fileName}</span>
-        </p>
+      ) : fileKeyInfo ? (
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="font-medium">✓ File Name:</span>{" "}
+            <span>{fileKeyInfo.fileName}</span>
+          </div>
+          <button
+            onClick={onRefreshMatch}
+            className="ml-2 p-1 hover:bg-gray-200 rounded"
+            title="매칭 다시 시도"
+          >
+            🔄
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-red-500 font-medium">
-            ⚠ {error || `"${currentFileName}"이 등록되지 않았습니다.`}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-red-500 font-medium">
+              ⚠ {error || `"${currentFileName}"이 등록되지 않았습니다.`}
+            </p>
+            <button
+              onClick={onRefreshMatch}
+              className="ml-2 p-1 hover:bg-gray-200 rounded"
+              title="매칭 다시 시도"
+            >
+              🔄
+            </button>
+          </div>
           <div className="flex justify-between gap-2">
             <button
               onClick={onSearchClick}

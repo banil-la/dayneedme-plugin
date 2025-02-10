@@ -84,6 +84,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     }
 
     try {
+      // 파일키 등록
       const response = await fetch(`${getServerUrl()}/api/filekey/`, {
         method: "POST",
         headers: {

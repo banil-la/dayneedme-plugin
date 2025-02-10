@@ -88,13 +88,13 @@ export default function () {
     }
   }
 
-  // 파일키 정보 확인
+  // 파일명으로 파일키-파일명 확인
   const checkFileKey = async (authToken: string) => {
     const fileName = getCurrentFileName();
     console.log("[checkFileKey] Starting file key check for:", fileName);
 
     try {
-      const url = `${serverUrl}/api/filekey/get-file-key?filename=${encodeURIComponent(
+      const url = `${serverUrl}/api/filekey/search?name=${encodeURIComponent(
         fileName
       )}`;
       const response = await fetch(url, {
@@ -111,9 +111,8 @@ export default function () {
       figma.ui.postMessage({
         type: "FILE_KEY_INFO",
         info: {
-          fileName,
+          fileName: data.fileName,
           fileKey: data.fileKey,
-          isFromDatabase: data.isFromDatabase,
         },
       });
     } catch (error) {
@@ -123,7 +122,17 @@ export default function () {
 
   // 이벤트 핸들러 등록
   on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
-    figma.ui.resize(width, height);
+    // 최소/최대 크기 제한 적용
+    const constrainedWidth = Math.min(
+      Math.max(width, plugin.size.min.width),
+      plugin.size.max.width
+    );
+    const constrainedHeight = Math.min(
+      Math.max(height, plugin.size.min.height),
+      plugin.size.max.height
+    );
+
+    figma.ui.resize(constrainedWidth, constrainedHeight);
   });
 
   on("SAVE_TOKEN", async (token: string | TokenData) => {

@@ -13,7 +13,6 @@ const UtilURL: React.FC = () => {
   const [fileKeyInfo, setFileKeyInfo] = useState<{
     fileName: string;
     fileKey: string;
-    isFromDatabase: boolean;
   } | null>(null);
 
   const handleUpdateRecentUrls = () => {

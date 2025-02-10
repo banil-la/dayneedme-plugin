@@ -56,17 +56,12 @@ export interface NavigateToNodeHandler extends EventHandler {
 
 export interface FileKeyInfoHandler extends EventHandler {
   name: "FILE_KEY_INFO";
-  handler: (info: {
-    fileName: string;
-    fileKey: string;
-    isFromDatabase: boolean;
-  }) => void;
+  handler: (info: { fileName: string; fileKey: string }) => void;
 }
 
 export interface FileKeyInfo {
   fileName: string;
   fileKey: string;
-  isFromDatabase: boolean;
 }
 
 export interface GlobalContextType {

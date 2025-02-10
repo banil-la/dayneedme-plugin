@@ -14,7 +14,7 @@ interface UserInfo {
   name: string;
 }
 
-interface TokenData {
+export interface TokenData {
   access_token: string;
   refresh_token: string;
 }
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       try {
-        const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
+        const response = await fetch(`${serverUrl}/api/auth/user`, {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
@@ -71,8 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserInfo = async (token: string, refreshToken: string) => {
     try {
       // console.log("[fetchUserInfo] Fetching user info with token:", token);
-      // const response = await fetch("http://localhost:8080/get-user-info", {
-      const response = await fetch(`${serverUrl}/api/auth/get-user-info`, {
+      // const response = await fetch("http://localhost:8080/user", {
+      const response = await fetch(`${serverUrl}/api/auth/user`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -224,7 +224,7 @@ export const useAuth = (): AuthContextType => {
 
 const getUserInfo = async (token: string) => {
   try {
-    const response = await fetch(`${getServerUrl()}/api/auth/get-user-info`, {
+    const response = await fetch(`${getServerUrl()}/api/auth/user`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

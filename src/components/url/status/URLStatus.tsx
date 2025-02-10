@@ -14,47 +14,52 @@ const URLStatus: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchFileKeyInfo = async () => {
-      setIsLoading(true);
+  const fetchFileKeyInfo = async () => {
+    setIsLoading(true);
+    setError(null);
 
-      if (!currentFileName) {
-        console.log("[URLStatus] No current file name available.");
-        setError("현재 파일명을 가져올 수 없습니다.");
-        setIsLoading(false);
-        return;
-      }
+    if (!currentFileName) {
+      console.log("[URLStatus] No current file name available.");
+      setError("현재 파일명을 가져올 수 없습니다.");
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        const response = await fetch(
-          `${getServerUrl()}/api/filekey/${encodeURIComponent(
-            currentFileName
-          )}`,
-          {
-            headers: {
-              Authorization: `Bearer ${authToken}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("피그마 파일 정보를 찾지 못했어요.");
+    try {
+      const response = await fetch(
+        `${getServerUrl()}/api/filekey/search?name=${encodeURIComponent(
+          currentFileName
+        )}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
         }
+      );
 
-        const data = await response.json();
-        setFileKeyInfo(data);
-      } catch (error) {
-        console.error("[URLStatus] Error fetching file key info:", error);
-        setError(
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했어요."
-        );
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        setFileKeyInfo(null);
+        throw new Error("피그마 파일 정보를 찾지 못했어요.");
       }
-    };
 
+      const data = await response.json();
+      if (data) {
+        setFileKeyInfo(data);
+      } else {
+        setFileKeyInfo(null);
+      }
+    } catch (error) {
+      console.error("[URLStatus] Error fetching file key info:", error);
+      setError(
+        error instanceof Error ? error.message : "알 수 없는 오류가 발생했어요."
+      );
+      setFileKeyInfo(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchFileKeyInfo();
   }, [currentFileName, authToken]);
 
@@ -72,6 +77,11 @@ const URLStatus: React.FC = () => {
     console.log("[URLStatus] Closing modal");
     setIsModalOpen(false);
     setIsSearchModalOpen(false);
+  };
+
+  const handleRefreshMatch = async () => {
+    console.log("[URLStatus] Refreshing file key match");
+    await fetchFileKeyInfo();
   };
 
   const handleFileKeyExtract = async (fileKey: string) => {
@@ -115,14 +125,13 @@ const URLStatus: React.FC = () => {
       const data = JSON.parse(responseText);
       console.log("[URLStatus] Registration successful:", data);
 
-      setFileKeyInfo({
-        fileName: data.fileName,
-        fileKey: data.fileKey,
-        isFromDatabase: data.isFromDatabase,
-      });
+      setFileKeyInfo(data);
       console.log("[URLStatus] FileKeyInfo updated");
 
       setIsModalOpen(false);
+
+      // 파일키 등록 후 자동으로 파일명 검색 시도
+      await fetchFileKeyInfo();
     } catch (error) {
       console.error("[URLStatus] Registration failed:", error);
       setError(
@@ -146,6 +155,7 @@ const URLStatus: React.FC = () => {
       isModalOpen={isModalOpen}
       isSearchModalOpen={isSearchModalOpen}
       onFileKeyExtract={handleFileKeyExtract}
+      onRefreshMatch={handleRefreshMatch}
     />
   );
 };

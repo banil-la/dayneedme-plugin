@@ -4,8 +4,9 @@ import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
+import type { TokenData } from "../../context/AuthContext";
 import classNames from "classnames";
-import { TokenData } from "../../main";
+import { getServerUrl } from "../../utils/getServerUrl";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -49,14 +50,11 @@ const Login: React.FC = () => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch(
-        "https://py-prod-adot.vercel.app/api/auth/supabase-login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch(`${getServerUrl()}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
