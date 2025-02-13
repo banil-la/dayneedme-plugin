@@ -22,8 +22,6 @@ const UtilURL: React.FC = () => {
 
   useEffect(() => {
     const handleFileKeyInfo = (event: MessageEvent) => {
-      console.log("[UtilURL] Received message:", event.data.pluginMessage);
-
       if (event.data.pluginMessage?.type === "FILE_KEY_INFO") {
         console.log(
           "[UtilURL] Setting file key info:",

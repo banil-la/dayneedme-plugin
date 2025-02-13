@@ -5,6 +5,7 @@ import copyToClipboard from "../../hooks/copyToClipboard";
 import { useAuth } from "../../context/AuthContext";
 import { useGlobal } from "../../context/GlobalContext";
 import { getServerUrl } from "../../utils/getServerUrl";
+import UrlCreated from "./UrlCreated";
 
 interface UrlShareProps {
   onUpdateRecentUrls: () => void;
@@ -19,49 +20,72 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
   const [description, setDescription] = useState<string>("");
   const [isFrameSelected, setIsFrameSelected] = useState(false);
 
-  const handleUrlShare = () => {
-    emit("GET_SHARE_LINK", {
-      authToken,
-      fileKey: fileKeyInfo?.fileKey,
-      description: description.trim(),
-    });
-  };
-
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      const [type, data] = event.data.pluginMessage || [];
-      if (type === "SELECTION_CHANGED") {
-        setIsFrameSelected(data);
-      } else if (type === "SHARE_LINK") {
-        setShortUrl(data.short_url);
-        copyToClipboard(data.short_url);
-        onUpdateRecentUrls();
-        setIsLoading(false);
-        setDescription("");
-      } else if (type === "SHARE_LINK_ERROR") {
-        setError(data);
-        setIsLoading(false);
+      const message = event.data.pluginMessage;
+      console.log("[UrlShare] Received message:", message);
+
+      if (!message) return;
+
+      if (typeof message === "object" && "type" in message) {
+        if (message.type === "SELECTION_CHANGED") {
+          console.log("[UrlShare] Selection changed:", message.data);
+          setIsFrameSelected(!!message.data);
+        } else if (message.type === "SHARE_LINK_RECEIVED") {
+          // 피그마로부터 공유 링크를 받으면 API 호출
+          if (message.link) {
+            const nodeId = message.link;
+            handleCreateShortUrl(nodeId);
+          } else {
+            setError("공유 링크를 가져올 수 없습니다");
+            setIsLoading(false);
+          }
+        } else if (message.type === "SHARE_LINK_ERROR") {
+          setError(message.error);
+          setIsLoading(false);
+        }
+      } else if (Array.isArray(message)) {
+        const [type, data] = message;
+        if (type === "SELECTION_CHANGED") {
+          console.log("[UrlShare] Selection changed (array):", data);
+          setIsFrameSelected(!!data);
+        }
       }
     };
 
     window.addEventListener("message", handleMessage);
+    emit("GET_SELECTED_TEXT"); // 초기 선택 상태 확인
+
     return () => window.removeEventListener("message", handleMessage);
   }, [authToken, onUpdateRecentUrls]);
 
   const handleGenerateShortUrl = async () => {
+    console.log("[UrlShare] handleGenerateShortUrl called");
     if (isLoading) return;
     if (!fileKeyInfo?.fileKey || !fileKeyInfo?.fileName) {
-      setError("Please select a file first");
+      setError("파일을 먼저 선택해주세요");
+      return;
+    }
+    if (!isFrameSelected) {
+      setError("프레임을 선택해주세요");
       return;
     }
     if (!description.trim()) {
-      setError("Please enter a description");
+      setError("설명을 입력해주세요");
       return;
     }
 
+    console.log("[UrlShare] handleGenerateShortUrl called");
     setIsLoading(true);
     setShortUrl(null);
+    setError(null);
 
+    // 피그마에 공유 링크 요청
+    console.log("[UrlShare] GET_SHARE_LINK");
+    emit("GET_SHARE_LINK");
+  };
+
+  const handleCreateShortUrl = async (nodeId: string) => {
     try {
       const response = await fetch(`${getServerUrl()}/api/url/`, {
         method: "POST",
@@ -70,14 +94,15 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          url: fileKeyInfo.fileKey,
-          file_key: fileKeyInfo.fileKey,
+          node_id: `${fileKeyInfo?.fileName}?node-id=${nodeId}`,
+          file_key: fileKeyInfo?.fileKey,
           description: description.trim(),
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create URL");
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "URL 생성에 실패했습니다");
       }
 
       const data = await response.json();
@@ -85,10 +110,12 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
       copyToClipboard(data.short_url);
       onUpdateRecentUrls();
       setDescription("");
+      setIsLoading(false);
     } catch (error) {
-      console.error("Error creating URL:", error);
-      setError(error instanceof Error ? error.message : "Failed to create URL");
-    } finally {
+      console.error("[UrlShare] Error creating URL:", error);
+      setError(
+        error instanceof Error ? error.message : "URL 생성에 실패했습니다"
+      );
       setIsLoading(false);
     }
   };
@@ -127,19 +154,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
           {isLoading ? "생성 중..." : "생성"}
         </button>
       </div>
-      {shortUrl && (
-        <p>
-          ✅{" "}
-          <a
-            className="font-medium text-blue-600 underline"
-            href={shortUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {shortUrl}
-          </a>
-        </p>
-      )}
+      {shortUrl && <UrlCreated shortUrl={shortUrl} />}
       {error && <div className="text-red-500">{error}</div>}
     </div>
   );

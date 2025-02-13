@@ -2,7 +2,6 @@
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import {
-  GetUrlShareHandler,
   OS,
   Product,
   ResizeWindowHandler,
@@ -14,7 +13,6 @@ import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
-const SETTINGS_KEY = "STRING_SETTINGS";
 
 // 유틸리티 함수들
 const getCurrentFileName = () => figma.root.name;
@@ -208,28 +206,30 @@ export default function () {
   // 공유 링크 가져오기 핸들러 추가
   on("GET_SHARE_LINK", async function () {
     try {
-      // 현재 파일의 URL 가져오기
-      const url =
-        figma.currentPage.parent?.parent?.getPluginData("url") ||
-        figma.currentPage.parent?.getPluginData("url") ||
-        figma.root.getPluginData("url");
+      // 현재 선택된 프레임의 공유 링크 생성
+      const selection = figma.currentPage.selection;
+      if (!selection.length) {
+        figma.ui.postMessage({
+          type: "SHARE_LINK_ERROR",
+          error: "선택된 프레임이 없습니다.",
+        });
+        return;
+      }
 
-      // 객체 형태로 메시지 전송
+      const node = selection[0];
+      const nodeId = node.id;
+
+      console.log("[Plugin] Node ID generated:", nodeId);
+
       figma.ui.postMessage({
-        pluginMessage: {
-          // pluginMessage 객체로 감싸기
-          type: "SHARE_LINK_RECEIVED",
-          link: url || null,
-        },
+        type: "SHARE_LINK_RECEIVED",
+        link: nodeId,
       });
     } catch (error) {
-      console.error("Error getting share link:", error);
+      console.error("[Plugin] Error getting share link:", error);
       figma.ui.postMessage({
-        pluginMessage: {
-          // pluginMessage 객체로 감싸기
-          type: "SHARE_LINK_RECEIVED",
-          link: null,
-        },
+        type: "SHARE_LINK_ERROR",
+        error: "공유 링크를 생성하는데 실패했습니다.",
       });
     }
   });
