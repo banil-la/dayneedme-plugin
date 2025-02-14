@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
-
-interface TokenData {
-  access_token: string;
-  refresh_token: string;
-}
+import { TokenData } from "../types";
 
 export function useAuthToken(): [
   string | null,

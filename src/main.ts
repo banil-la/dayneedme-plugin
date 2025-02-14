@@ -2,11 +2,10 @@
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import {
-  OS,
-  Product,
   ResizeWindowHandler,
   SetModeHandler,
   Mode,
+  TokenData,
 } from "./types";
 import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
@@ -18,7 +17,7 @@ const TOKEN_KEY = "ACCESS_TOKEN";
 const getCurrentFileName = () => figma.root.name;
 const sendCurrentFileName = () => {
   const fileName = getCurrentFileName();
-  console.log("[Plugin] Sending current file name:", fileName);
+  // console.log("[Plugin] Sending current file name:", fileName);
   figma.ui.postMessage({ type: "CURRENT_FILENAME", fileName });
 };
 
@@ -32,92 +31,81 @@ const handleError = (context: string, error: unknown) => {
   return errorMessage;
 };
 
-export interface TokenData {
-  access_token: string;
-  refresh_token: string;
-}
-
 function isValidToken(token: any): token is string {
   return typeof token === "string" && token.length > 0;
 }
 
-interface StringSettings {
-  os: OS;
-  product: Product;
+function checkSelection() {
+  try {
+    const selection = figma.currentPage.selection;
+    console.log("[main] Checking selection:", {
+      mode: currentMode,
+      selectionLength: selection.length,
+      selectionTypes: selection.map((node) => node.type),
+    });
+
+    if (currentMode === "string") {
+      // string 모드: 텍스트 노드가 선택된 경우에만 이벤트 발생
+      if (selection.length === 1 && selection[0].type === "TEXT") {
+        console.log(
+          "[main] Emitting text selection:",
+          selection[0].characters
+        );
+        emit("SELECTION_CHANGED", selection[0].characters);
+      } else {
+        console.log("[main] Emitting null selection in string mode");
+        emit("SELECTION_CHANGED", null);
+      }
+    } else if (currentMode === "url") {
+      // url 모드: 프레임/레이어 선택 여부
+      console.log(
+        "[main] Emitting URL mode selection state:",
+        selection.length > 0
+      );
+      emit("SELECTION_CHANGED", selection.length > 0);
+    }
+  } catch (error) {
+    console.error("[main] Error in checkSelection:", error);
+    emit("SELECTION_CHANGED", null);
+  }
 }
+
+async function checkFileKey  (authToken: string) {
+  const fileName = getCurrentFileName();
+  console.log("[checkFileKey] Starting file key check for:", fileName);
+
+  try {
+    const url = `${serverUrl}/api/filekey/search?name=${encodeURIComponent(
+      fileName
+    )}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${authToken}` },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("[checkFileKey] Response data:", data);
+
+    figma.ui.postMessage({
+      type: "FILE_KEY_INFO",
+      info: {
+        fileName: data.fileName,
+        fileKey: data.fileKey,
+      },
+    });
+  } catch (error) {
+    handleError("checkFileKey", error);
+  }
+};
+
 
 // let currentMode: Mode = "default"; // 기본 모드
 let currentMode: Mode = "string"; // 임시
 
 export default function () {
-  // 선택 상태 체크 및 이벤트 발생
-  function checkSelection() {
-    try {
-      const selection = figma.currentPage.selection;
-      console.log("[main] Checking selection:", {
-        mode: currentMode,
-        selectionLength: selection.length,
-        selectionTypes: selection.map((node) => node.type),
-      });
-
-      if (currentMode === "string") {
-        // string 모드: 텍스트 노드가 선택된 경우에만 이벤트 발생
-        if (selection.length === 1 && selection[0].type === "TEXT") {
-          console.log(
-            "[main] Emitting text selection:",
-            selection[0].characters
-          );
-          emit("SELECTION_CHANGED", selection[0].characters);
-        } else {
-          console.log("[main] Emitting null selection in string mode");
-          emit("SELECTION_CHANGED", null);
-        }
-      } else if (currentMode === "url") {
-        // url 모드: 프레임/레이어 선택 여부
-        console.log(
-          "[main] Emitting URL mode selection state:",
-          selection.length > 0
-        );
-        emit("SELECTION_CHANGED", selection.length > 0);
-      }
-    } catch (error) {
-      console.error("[main] Error in checkSelection:", error);
-      emit("SELECTION_CHANGED", null);
-    }
-  }
-
-  // 파일명으로 파일키-파일명 확인
-  const checkFileKey = async (authToken: string) => {
-    const fileName = getCurrentFileName();
-    console.log("[checkFileKey] Starting file key check for:", fileName);
-
-    try {
-      const url = `${serverUrl}/api/filekey/search?name=${encodeURIComponent(
-        fileName
-      )}`;
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("[checkFileKey] Response data:", data);
-
-      figma.ui.postMessage({
-        type: "FILE_KEY_INFO",
-        info: {
-          fileName: data.fileName,
-          fileKey: data.fileKey,
-        },
-      });
-    } catch (error) {
-      handleError("checkFileKey", error);
-    }
-  };
-
   // 이벤트 핸들러 등록
   on<ResizeWindowHandler>("RESIZE_WINDOW", ({ width, height }) => {
     // 최소/최대 크기 제한 적용
@@ -172,14 +160,18 @@ export default function () {
   });
 
   on("GET_SELECTED_TEXT", checkSelection);
+  
   figma.on("selectionchange", checkSelection);
+  
   on<SetModeHandler>("SET_MODE", (mode) => {
     currentMode = mode;
     checkSelection();
   });
 
   on("TOKEN_LOADED", checkFileKey);
+  
   on("GET_CURRENT_FILENAME", sendCurrentFileName);
+  
   on("CHECK_FILE_KEY", () => {
     figma.clientStorage
       .getAsync(TOKEN_KEY)
@@ -187,23 +179,31 @@ export default function () {
       .catch((error) => handleError("CHECK_FILE_KEY", error));
   });
 
-  // 문자열 설정 저장 핸들러 추가
+  // 문자열 설정 저장 핸들러
   on("SAVE_STRING_SETTINGS", async function (settings) {
-    await figma.clientStorage.setAsync("stringSettings", settings);
-    emit("STRING_SETTINGS_SAVED", settings);
+    try {
+      console.log("[Plugin] Saving string settings:", settings);
+      await figma.clientStorage.setAsync("stringSettings", settings);
+    } catch (error) {
+      handleError("STRING_SETTINGS_SAVE", error);
+    }
   });
 
-  // 문자열 설정 로드 핸들러 추가
+  // 문자열 설정 로드 핸들러
   on("LOAD_STRING_SETTINGS", async function () {
     try {
+      console.log("[Plugin] Loading string settings");
       const settings = await figma.clientStorage.getAsync("stringSettings");
-      emit("STRING_SETTINGS_LOADED", settings);
+      if (settings) {
+        console.log("[Plugin] Loaded settings:", settings);
+        emit("STRING_SETTINGS_LOADED", settings);
+      }
     } catch (error) {
       handleError("STRING_SETTINGS_LOAD", error);
     }
   });
 
-  // 공유 링크 가져오기 핸들러 추가
+  // 공유 링크 가져오기 핸들러
   on("GET_SHARE_LINK", async function (data: { description: string }) {
     try {
       const selection = figma.currentPage.selection;
@@ -234,6 +234,7 @@ export default function () {
     }
   });
 
+  // 피그마 알림 핸들러
   on("SHOW_NOTIFY", function (data: { message: string; error?: boolean }) {
     figma.notify(data.message, { error: data.error });
   });

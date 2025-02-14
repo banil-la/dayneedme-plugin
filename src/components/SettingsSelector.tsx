@@ -7,7 +7,7 @@ const SettingsSelector: React.FC = () => {
   return (
     <div className="settings-selector flex items-center justify-between border-y border-base-200 px-4 py-2">
       <div className="flex gap-2 items-center">
-        <label className="block text-sm font-medium text-base">
+        <label className="block text-sm font-medium">
           운영체제 선택
         </label>
         <select
@@ -24,11 +24,11 @@ const SettingsSelector: React.FC = () => {
         >
           <option value="ios">iOS</option>
           <option value="android">Android</option>
-          <option value="common">Common</option>
+          {/* <option value="common">공통</option> */}
         </select>
       </div>
       <div className="flex gap-2 items-center">
-        <label className="block text-sm font-medium text-base">제품 선택</label>
+        <label className="block text-sm font-medium">제품 선택</label>
         <select
           value={product}
           onChange={(e) =>
@@ -38,8 +38,8 @@ const SettingsSelector: React.FC = () => {
           }
           className="select select-bordered select-xs"
         >
-          <option value="adotphone">Adotphone</option>
-          <option value="aiphone">Aiphone</option>
+          <option value="adotphone">에이닷전화(구 T전화)</option>
+          <option value="aiphone">에이닷 앱 전화</option>
         </select>
       </div>
     </div>

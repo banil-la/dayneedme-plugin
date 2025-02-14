@@ -4,9 +4,9 @@ import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { useAuth } from "../../context/AuthContext";
-import type { TokenData } from "../../context/AuthContext";
 import classNames from "classnames";
 import { getServerUrl } from "../../utils/getServerUrl";
+import { TokenData } from "../../types";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");

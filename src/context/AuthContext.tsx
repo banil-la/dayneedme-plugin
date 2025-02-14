@@ -6,26 +6,8 @@ import { useContext, useEffect, useState } from "preact/hooks";
 import { emit } from "@create-figma-plugin/utilities";
 import { useAuthToken } from "../hooks/useAuthToken";
 import { getServerUrl } from "../utils/getServerUrl";
+import { AuthContextType, TokenData, UserInfo } from "../types";
 
-interface UserInfo {
-  id: string;
-  email: string;
-  role: string;
-  name: string;
-}
-
-export interface TokenData {
-  access_token: string;
-  refresh_token: string;
-}
-
-interface AuthContextType {
-  authToken: string | null;
-  refreshToken: string | null;
-  setTokens: (tokenData: TokenData | null) => void;
-  isLoading: boolean;
-  user: UserInfo | null;
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

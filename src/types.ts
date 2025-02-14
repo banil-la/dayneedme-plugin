@@ -1,6 +1,29 @@
 // types.ts
 import { EventHandler } from "@create-figma-plugin/utilities";
 
+// interfaces
+export interface TokenData {
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  role: string;
+  name: string;
+}
+
+export interface AuthContextType {
+  authToken: string | null;
+  refreshToken: string | null;
+  setTokens: (tokenData: TokenData | null) => void;
+  isLoading: boolean;
+  user: UserInfo | null;
+}
+
+// handlers
+
 export interface ResizeWindowHandler extends EventHandler {
   name: "RESIZE_WINDOW";
   handler: (windowSize: { width: number; height: number }) => void;
