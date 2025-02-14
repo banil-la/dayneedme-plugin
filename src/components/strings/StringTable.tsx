@@ -63,12 +63,14 @@ const StringTable: React.FC = () => {
           if (text) {
             setIsLoading(true);
             try {
-              const url = `${serverUrl}/api/strings/?search=${encodeURIComponent(
-                text
-              )}&os=${os}&product=${product}`;
-              console.log("[StringTable] Searching text:", text);
+              const url = new URL(`${serverUrl}/api/string/text`);
+              url.searchParams.append('text', text);
+              url.searchParams.append('os', os);
+              url.searchParams.append('product', product);
 
-              const response = await fetch(url, {
+              console.log("[StringTable] Searching text:", url.toString());
+
+              const response = await fetch(url.toString(), {
                 headers: {
                   Authorization: `Bearer ${authToken}`,
                 },
