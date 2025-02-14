@@ -234,6 +234,10 @@ export default function () {
     }
   });
 
+  on("SHOW_NOTIFY", function (data: { message: string; error?: boolean }) {
+    figma.notify(data.message, { error: data.error });
+  });
+
   // 초기화
   figma.once("run", () => {
     console.log("[Plugin] Starting with:", {

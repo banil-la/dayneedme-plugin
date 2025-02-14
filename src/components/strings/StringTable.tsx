@@ -4,20 +4,16 @@ import { useAuth } from "../../context/AuthContext";
 import { useGlobal } from "../../context/GlobalContext";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { getServerUrl } from "../../utils/getServerUrl";
+import { SearchResult, StringData } from "./string_helper";
+import StringItem from "./StringItem";
+import copyToClipboard from "../../hooks/copyToClipboard";
+import classNames from "classnames";
 
-interface StringData {
-  id: number;
-  content: string;
-}
-
-interface ParsedContent {
-  kr: string;
-  en: string;
-}
 
 const StringTable: React.FC = () => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
-  const [matchingStrings, setMatchingStrings] = useState<StringData[]>([]);
+  const [exactMatches, setExactMatches] = useState<StringData[]>([]);
+  const [partialMatches, setPartialMatches] = useState<StringData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { mode, os, product } = useGlobal();
   const { authToken } = useAuth();
@@ -57,7 +53,8 @@ const StringTable: React.FC = () => {
           const text = typeof value === "string" ? value : null;
           console.log("[StringTable] Processing string mode selection:", text);
           setSelectedText(text);
-          setMatchingStrings([]); // 선택이 변경되면 결과 초기화
+          setExactMatches([]);
+          setPartialMatches([]);
 
           // 텍스트가 선택되었을 때만 검색
           if (text) {
@@ -80,9 +77,10 @@ const StringTable: React.FC = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
 
-              const data = await response.json();
+              const data: SearchResult = await response.json();
               console.log("[StringTable] Search results:", data);
-              setMatchingStrings(data);
+              setExactMatches(data.exact_matched);
+              setPartialMatches(data.partial_matched);
             } catch (error) {
               console.error("[StringTable] Error searching strings:", error);
               figma.notify("문자열 검색 중 오류가 발생했습니다", {
@@ -95,7 +93,8 @@ const StringTable: React.FC = () => {
         } else if (mode === "url") {
           // URL 모드인 경우 선택 상태 초기화
           setSelectedText(null);
-          setMatchingStrings([]);
+          setExactMatches([]);
+          setPartialMatches([]);
         }
       }
     );
@@ -106,92 +105,51 @@ const StringTable: React.FC = () => {
   }, [mode, os, product, authToken]); // 의존성 배열 정리
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    figma.notify("텍스트가 클립보드에 복사되었습니다");
-  };
-
-  const parseContent = (content: string): ParsedContent => {
-    try {
-      const parsed = JSON.parse(content);
-      return {
-        kr: parsed.kr || "",
-        en: parsed.en || "",
-      };
-    } catch (e) {
-      console.error("Failed to parse content:", e);
-      return { kr: content, en: "" };
-    }
+    copyToClipboard(text);
+    emit("SHOW_NOTIFY", { message: "문자열이 클립보드에 복사되었습니다" });
   };
 
   return (
     <div className="string-table">
-      {selectedText ? (
         <div className="mb-4">
-          <h3 className="text-lg font-medium mb-2">선택된 텍스트</h3>
-          <div className="bg-base-200 p-2 rounded flex justify-between items-center">
-            <p>{selectedText}</p>
-            <button
-              onClick={() => handleCopy(selectedText)}
-              className="ml-2 p-1 hover:bg-gray-300 rounded"
-            >
-              복사
-            </button>
+          <div className="bg-base-100 p-2 rounded flex justify-between items-center">
+            <p className={classNames("w-full text-center", selectedText ? "text-black dark:text-white" : "text-gray-300 dark:text-gray-300")}>{selectedText? selectedText: "검증을 위한 문자열을 선택해 주세요."}</p>
           </div>
         </div>
-      ) : (
-        <p className="text-gray-500 text-center py-8">
-          텍스트 레이어를 선택해주세요
-        </p>
-      )}
 
       {isLoading ? (
         <p>검색 중...</p>
-      ) : matchingStrings.length > 0 ? (
-        <div>
-          <h3 className="text-lg font-medium mb-2">일치하는 문자열</h3>
-          <ul className="space-y-2">
-            {matchingStrings.map((item) => {
-              const parsed = parseContent(item.content);
-              return (
-                <li key={item.id} className="bg-base-200 p-3 rounded">
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                            KR
-                          </span>
-                          <p className="font-medium">{parsed.kr}</p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                            EN
-                          </span>
-                          <p className="text-gray-600">{parsed.en}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => handleCopy(parsed.kr)}
-                          className="p-1 hover:bg-gray-300 rounded text-sm"
-                          title="한국어 복사"
-                        >
-                          KR 복사
-                        </button>
-                        <button
-                          onClick={() => handleCopy(parsed.en)}
-                          className="p-1 hover:bg-gray-300 rounded text-sm"
-                          title="영어 복사"
-                        >
-                          EN 복사
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+      ) : exactMatches.length > 0 || partialMatches.length > 0 ? (
+        <div className="space-y-4">
+          {exactMatches.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-2">정확히 일치하는 문자열</h3>
+              <ul className="space-y-2">
+                {exactMatches.map((item) => (
+                  <StringItem
+                    key={item.id}
+                    item={item}
+                    onCopy={handleCopy}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {partialMatches.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium mb-2">유사한 문자열</h3>
+              <ul className="space-y-2">
+                {partialMatches.map((item) => (
+                  <StringItem
+                    key={item.id}
+                    item={item}
+                    onCopy={handleCopy}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         selectedText && <p>일치하는 문자열이 없습니다</p>
