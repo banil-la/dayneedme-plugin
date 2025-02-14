@@ -35,7 +35,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
           // 피그마로부터 공유 링크를 받으면 API 호출
           if (message.link) {
             const nodeId = message.link;
-            handleCreateShortUrl(nodeId);
+            handleCreateShortUrl(nodeId, message.description);
           } else {
             setError("공유 링크를 가져올 수 없습니다");
             setIsLoading(false);
@@ -74,18 +74,18 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
       setError("설명을 입력해주세요");
       return;
     }
-
-    console.log("[UrlShare] handleGenerateShortUrl called");
+  
     setIsLoading(true);
     setShortUrl(null);
     setError(null);
-
+  
     // 피그마에 공유 링크 요청
     console.log("[UrlShare] GET_SHARE_LINK");
-    emit("GET_SHARE_LINK");
+    emit("GET_SHARE_LINK", { description: description.trim() });
   };
 
-  const handleCreateShortUrl = async (nodeId: string) => {
+  
+  const handleCreateShortUrl = async (nodeId: string, desc: string) => {
     try {
       const response = await fetch(`${getServerUrl()}/api/url/`, {
         method: "POST",
@@ -96,21 +96,21 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
         body: JSON.stringify({
           node_id: `${fileKeyInfo?.fileName}?node-id=${nodeId}`,
           file_key: fileKeyInfo?.fileKey,
-          description: description,
+          description: desc,
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || "URL 생성에 실패했습니다");
       }
-
+  
       const data = await response.json();
       setShortUrl(data.short_url);
       copyToClipboard(data.short_url);
       onUpdateRecentUrls();
-      // setDescription("");
       setIsLoading(false);
+      setDescription(""); // API 요청 성공 후 description 초기화
     } catch (error) {
       console.error("[UrlShare] Error creating URL:", error);
       setError(
@@ -119,8 +119,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
       setIsLoading(false);
     }
   };
-
-  // 버튼 활성화 조건 체크
+  
   const isButtonEnabled =
     !isLoading &&
     fileKeyInfo?.fileKey &&

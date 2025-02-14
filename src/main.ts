@@ -204,9 +204,8 @@ export default function () {
   });
 
   // 공유 링크 가져오기 핸들러 추가
-  on("GET_SHARE_LINK", async function () {
+  on("GET_SHARE_LINK", async function (data: { description: string }) {
     try {
-      // 현재 선택된 프레임의 공유 링크 생성
       const selection = figma.currentPage.selection;
       if (!selection.length) {
         figma.ui.postMessage({
@@ -224,6 +223,7 @@ export default function () {
       figma.ui.postMessage({
         type: "SHARE_LINK_RECEIVED",
         link: nodeId,
+        description: data.description,
       });
     } catch (error) {
       console.error("[Plugin] Error getting share link:", error);
