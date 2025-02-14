@@ -39,7 +39,7 @@ const UrlRecents: React.FC<UrlRecentssProps> = ({ refreshKey }) => {
         return;
       }
 
-      const url = `${serverUrl}/api/url?page=${page}&page_size=5&file_key=${fileKeyInfo.fileKey}`;
+      const url = `${serverUrl}/api/url/list?page=${page}&page_size=5&file_key=${fileKeyInfo.fileKey}`;
       console.log("[UrlRecentss] Request URL:", url);
 
       const response = await fetch(url, {

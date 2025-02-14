@@ -96,7 +96,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
         body: JSON.stringify({
           node_id: `${fileKeyInfo?.fileName}?node-id=${nodeId}`,
           file_key: fileKeyInfo?.fileKey,
-          description: description.trim(),
+          description: description,
         }),
       });
 
@@ -109,7 +109,7 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
       setShortUrl(data.short_url);
       copyToClipboard(data.short_url);
       onUpdateRecentUrls();
-      setDescription("");
+      // setDescription("");
       setIsLoading(false);
     } catch (error) {
       console.error("[UrlShare] Error creating URL:", error);

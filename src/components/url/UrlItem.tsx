@@ -29,7 +29,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
       console.log("[UrlItem] Updating description:", description.trim());
 
       const response = await fetch(
-        `${getServerUrl()}/api/url/description/${url.url_id}`,
+        `${getServerUrl()}/api/url/${url.url_id}`,
         {
           method: "PUT",
           headers: {
