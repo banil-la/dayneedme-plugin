@@ -239,6 +239,28 @@ export default function () {
     figma.notify(data.message, { error: data.error });
   });
 
+  // 문자열 코드 적용 핸들러
+  on("APPLY_STRING_CODE", async function (code: string) {
+    try {
+      const selection = figma.currentPage.selection;
+      if (!selection.length) {
+        figma.notify("선택된 레이어가 없습니다", { error: true });
+        return;
+      }
+
+      const node = selection[0];
+      if (node.type === "TEXT") {
+        node.name = code;
+        figma.notify("레이어 이름이 변경되었습니다");
+      } else {
+        figma.notify("텍스트 레이어가 아닙니다", { error: true });
+      }
+    } catch (error) {
+      console.error("[Plugin] Error applying string code:", error);
+      figma.notify("레이어 이름 변경에 실패했습니다", { error: true });
+    }
+  });
+
   // 초기화
   figma.once("run", () => {
     console.log("[Plugin] Starting with:", {

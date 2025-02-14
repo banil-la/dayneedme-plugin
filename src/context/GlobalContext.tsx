@@ -53,10 +53,16 @@ export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
       }
     });
 
+    // 설정 저장 이벤트 리스너 추가
+    const unsubscribeSave = on("STRING_SETTINGS_SAVED", (settings) => {
+      console.log("[GlobalContext] Settings saved:", settings);
+    });
+
     return () => {
       unsubscribeLoad();
+      unsubscribeSave();  // cleanup
     };
-  }, []); // 빈 의존성 배열로 초기 1회만 실행
+  }, []);
 
   // 설정 변경 시 저장
   useEffect(() => {

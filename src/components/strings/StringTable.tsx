@@ -129,7 +129,6 @@ const StringTable: React.FC = () => {
                   <StringItem
                     key={item.id}
                     item={item}
-                    onCopy={handleCopy}
                   />
                 ))}
               </ul>
@@ -138,13 +137,12 @@ const StringTable: React.FC = () => {
 
           {partialMatches.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-2">유사한 문자열</h3>
+              <h3 className="text-lg font-medium mb-2">검색어를 포함하는 문자열</h3>
               <ul className="space-y-2">
                 {partialMatches.map((item) => (
                   <StringItem
                     key={item.id}
                     item={item}
-                    onCopy={handleCopy}
                   />
                 ))}
               </ul>

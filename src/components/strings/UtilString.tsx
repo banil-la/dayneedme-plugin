@@ -1,29 +1,25 @@
 import { h } from "preact";
-import StringTable from "./StringTable";
+import { useState } from "preact/hooks";
 import SettingsSelector from "../SettingsSelector";
-import { useGlobal } from "../../context/GlobalContext";
+import StringSearch from "./StringSearch";
+import { SelectionTable } from "./SelectionTable";
+import { SearchResultsTable } from "./SearchResultsTable";
+import { useStringSearch } from "../../hooks/useStringSearch";
 
-interface String {
-  id: number;
-  string: string;
-}
-
-const UtilString: React.FC = () => {
-  const { mode } = useGlobal();
-
-  // mode가 string일 때만 StringTable 렌더링 및 API 요청
-  if (mode !== "string") {
-    return null;
-  }
+export default function UtilString() {
+  const { results, isLoading, searchStrings } = useStringSearch();
 
   return (
     <div className="flex flex-col">
       <SettingsSelector />
+      <SearchResultsTable 
+        results={results} 
+        isLoading={isLoading} 
+        onSearch={searchStrings}
+      />
       <div className="p-4">
-        <StringTable />
+        <SelectionTable />
       </div>
     </div>
   );
-};
-
-export default UtilString;
+}
