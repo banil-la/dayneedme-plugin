@@ -9,6 +9,7 @@ import { getServerUrl } from "../utils/getServerUrl";
 import { AuthContextType, TokenData, UserInfo } from "../types";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const TOKEN_REFRESH_INTERVAL = 10 * 60 * 1000; // 10분마다 토큰 갱신
 
 interface AuthProviderProps {
   children: ComponentChildren;
@@ -19,98 +20,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const serverUrl = getServerUrl();
 
-  useEffect(() => {
-    const validateAndFetchUser = async () => {
-      if (!authToken) {
-        setUser(null);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${serverUrl}/api/auth/user`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to validate token");
-        }
-
-        const userData = await response.json();
-        setUser(userData);
-      } catch (error) {
-        console.error("Token validation failed:", error);
-        setTokens(null);
-        setUser(null);
-      }
-    };
-
-    validateAndFetchUser();
-  }, [authToken]);
-
-  const fetchUserInfo = async (token: string, refreshToken: string) => {
-    try {
-      // console.log("[fetchUserInfo] Fetching user info with token:", token);
-      // const response = await fetch("http://localhost:8080/user", {
-      const response = await fetch(`${serverUrl}/api/auth/user`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "X-Refresh-Token": refreshToken,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // console.log(
-          //   "[fetchUserInfo] Access token expired. Attempting refresh..."
-          // );
-          const newTokenData = await refreshAccessToken(refreshToken);
-          if (newTokenData) {
-            setTokens(newTokenData);
-            fetchUserInfo(
-              newTokenData.access_token,
-              newTokenData.refresh_token
-            );
-          } else {
-            console.error(
-              "[fetchUserInfo] Refresh token expired. Logging out."
-            );
-            setTokens(null);
-            setUser(null);
-          }
-          return;
-        }
-        throw new Error("[fetchUserInfo] Failed to fetch user information");
-      }
-
-      const userData = await response.json();
-      // console.log("[fetchUserInfo] User data received:", userData);
-
-      setUser({
-        id: userData.id,
-        email: userData.email,
-        role: userData.role,
-        name: userData.name,
-      });
-    } catch (error) {
-      console.error("[fetchUserInfo] Error fetching user info:", error);
-      setUser(null);
-    }
-  };
-
   const refreshAccessToken = async (
-    refreshToken: string
+    currentRefreshToken: string
   ): Promise<TokenData | null> => {
     try {
-      const response = await fetch("http://localhost:8080/refresh-token", {
+      const response = await fetch(`${serverUrl}/api/auth/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ refresh_token: currentRefreshToken }),
       });
 
       if (!response.ok) {
@@ -118,67 +37,109 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      // console..log("Access token refreshed:", data.access_token);
       return {
         access_token: data.access_token,
-        refresh_token: data.refresh_token || refreshToken,
+        refresh_token: data.refresh_token || currentRefreshToken,
       };
     } catch (error) {
-      // console..error("Error refreshing access token:", error);
+      console.error("Error refreshing access token:", error);
       return null;
     }
   };
 
+  const fetchUserInfo = async (token: string, currentRefreshToken: string) => {
+    try {
+      const response = await fetch(`${serverUrl}/api/auth/user`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 && currentRefreshToken) {
+          console.log("Token expired, attempting refresh...");
+          const newTokenData = await refreshAccessToken(currentRefreshToken);
+          if (newTokenData) {
+            setTokens(newTokenData);
+            // 새 토큰으로 다시 시도
+            return fetchUserInfo(
+              newTokenData.access_token,
+              newTokenData.refresh_token
+            );
+          } else {
+            console.error("Refresh token expired. Logging out.");
+            setTokens(null);
+            setUser(null);
+          }
+          return;
+        }
+        throw new Error("Failed to fetch user information");
+      }
+
+      const userData = await response.json();
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        name: userData.name,
+      });
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+      setUser(null);
+    }
+  };
+
+  // 토큰 자동 갱신
+  useEffect(() => {
+    if (!authToken || !refreshToken) return;
+
+    const refreshTokenPeriodically = async () => {
+      const newTokenData = await refreshAccessToken(refreshToken);
+      if (newTokenData) {
+        setTokens(newTokenData);
+      } else {
+        setTokens(null);
+        setUser(null);
+      }
+    };
+
+    const refreshInterval = setInterval(
+      refreshTokenPeriodically,
+      TOKEN_REFRESH_INTERVAL
+    );
+    return () => clearInterval(refreshInterval);
+  }, [authToken, refreshToken]);
+
+  // 토큰이 변경될 때마다 사용자 정보 갱신
   useEffect(() => {
     if (authToken) {
-      // console..log("[AuthProvider] Fetching user info...");
       fetchUserInfo(authToken, refreshToken || "");
     } else {
-      // console..log("[AuthProvider] No authToken, resetting user.");
       setUser(null);
     }
   }, [authToken, refreshToken]);
 
-  useEffect(() => {
-    // console.log(
-    //   "AuthProvider: authToken changed =",
-    //   authToken ? "exist" : "not exist"
-    // );
-    // console.log(
-    //   "AuthProvider: refreshToken changed =",
-    //   refreshToken ? "exist" : "not exist"
-    // );
-  }, [authToken, refreshToken]);
-
+  // 초기 토큰 로드
   useEffect(() => {
     const handleLoadedToken = (event: MessageEvent) => {
-      // console..log("[AuthContext] Received message:", event.data.pluginMessage);
-
       if (event.data.pluginMessage?.type === "LOADED_TOKEN" && !authToken) {
-        // authToken이 없을 때만
         const token = event.data.pluginMessage.token;
-        // console..log(
-        //   "[AuthContext] Token loaded, emitting TOKEN_LOADED:",
-        //   token
-        // );
         setTokens(token);
         emit("TOKEN_LOADED", token);
       }
     };
 
     if (!authToken) {
-      // authToken이 없을 때만 LOAD_TOKEN 요청
-      // console..log("[AuthContext] Setting up token load listener");
       window.addEventListener("message", handleLoadedToken);
-      // console.log("[AuthContext] Emitting LOAD_TOKEN");
       emit("LOAD_TOKEN");
 
       return () => {
-        // console.log("[AuthContext] Cleaning up token load listener");
         window.removeEventListener("message", handleLoadedToken);
       };
     }
-  }, [authToken]); // authToken을 의존성 배열에 추가
+  }, [authToken]);
 
   return (
     <AuthContext.Provider

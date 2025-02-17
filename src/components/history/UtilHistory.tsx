@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getServerUrl } from "../../utils/getServerUrl";
 import { formatDate } from "../../types";
 import { HistoryItemProps, HistoryResponseProps } from "./history_helper";
+import HistoryItem from "./HistoryItem";
 
 const UtilHome: React.FC = () => {
   const { os, product } = useGlobal();
@@ -69,26 +70,7 @@ const UtilHome: React.FC = () => {
     <div className="p-2">
       <div className="space-y-4">
         {histories.map((history) => (
-          <div
-            key={history.id}
-            className="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div className="text-sm font-medium text-gray-900">
-                {history.content}
-              </div>
-              <div className="text-xs text-gray-500">
-                {formatDate(history.date)}
-              </div>
-            </div>
-            <div className="flex gap-2 text-xs text-gray-500">
-              <span>{history.editor}</span>
-              <span>•</span>
-              <span className="uppercase">{history.os}</span>
-              <span>•</span>
-              <span className="uppercase">{history.product}</span>
-            </div>
-          </div>
+          <HistoryItem history={history} />
         ))}
         {histories.length === 0 && (
           <div className="text-center text-gray-500 py-8">
