@@ -53,7 +53,7 @@ export interface GetUrlShareHandler extends EventHandler {
   }) => void;
 }
 
-export type Mode = "default" | "string" | "url" | "image";
+export type Mode = "history" | "string" | "url" | "image";
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 

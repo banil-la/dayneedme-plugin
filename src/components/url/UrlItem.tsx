@@ -28,13 +28,16 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
     try {
       // console.log("[UrlItem] Updating description:", description.trim());
 
-      const response = await fetch(`${getServerUrl()}/api/url/${url.url_id}`, {
+      const response = await fetch(`${getServerUrl()}/api/url`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ description: description.trim() }),
+        body: JSON.stringify({
+          url_id: url.url_id,
+          description: description.trim(),
+        }),
       });
 
       const data = await response.json();
@@ -94,7 +97,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
           rel="noopener noreferrer"
           className="text-base text-blue-500 hover:underline"
         >
-          {`https://banil.la/s/${url.url_id}`}
+          {`https://dayneed.it/s/${url.url_id}`}
         </a>
         <div className="flex gap-2">
           <button

@@ -6,25 +6,25 @@ import { LuLandmark, LuLink2, LuBookA, LuImageDown } from "react-icons/lu";
 
 const TABS = [
   {
-    id: "default" as const,
+    id: "history" as const,
     icon: <LuLandmark size={`1.5em`} />,
     // icon: <IconHome />,
-    label: "기본",
+    label: "기록",
   },
   {
     id: "string" as const,
     icon: <LuBookA size={`1.5em`} />,
-    label: "문자열 검색",
+    label: "문자열",
   },
   {
     id: "url" as const,
     icon: <LuLink2 size={`1.5em`} />,
-    label: "공유 링크",
+    label: "공유",
   },
   {
     id: "image" as const,
     icon: <LuImageDown size={`1.5em`} />,
-    label: "이미지 추출",
+    label: "추출",
   },
 ];
 

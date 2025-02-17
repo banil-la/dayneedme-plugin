@@ -10,6 +10,7 @@ import UtilString from "./strings/UtilString";
 import UtilURL from "./url/UtilURL";
 import UtilImage from "./image/UtilImage";
 import SettingsSelector from "./SettingsSelector";
+import UtilHistory from "./history/UtilHistory";
 // import SettingsSelector from "./SettingsSelector";
 
 const App: React.FC = () => {
@@ -22,6 +23,8 @@ const App: React.FC = () => {
 
   const renderModeContent = () => {
     switch (mode) {
+      case "history":
+        return <UtilHistory />;
       case "string":
         return <UtilString />;
       case "url":

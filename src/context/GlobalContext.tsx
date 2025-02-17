@@ -1,7 +1,6 @@
 // src/context/GlobalContext.tsx
 
 import { createContext, h, JSX } from "preact";
-import { ComponentChildren } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { Mode, OS, Product, FileKeyInfo } from "../types";
@@ -20,7 +19,7 @@ interface GlobalContextType {
 }
 
 export const GlobalContext = createContext<GlobalContextType>({
-  mode: "string",
+  mode: "history",
   setMode: () => {},
   os: "ios",
   setOS: () => {},
@@ -33,7 +32,7 @@ export const GlobalContext = createContext<GlobalContextType>({
 });
 
 export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
-  const [mode, setMode] = useState<Mode>("url");
+  const [mode, setMode] = useState<Mode>("history");
   const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);

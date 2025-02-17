@@ -7,7 +7,7 @@ import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
-let currentMode: Mode = "default"; // 기본 모드
+let currentMode: Mode = "history"; // 기본 모드
 // let currentMode: Mode = "string"; // 임시
 
 // 유틸리티 함수들
