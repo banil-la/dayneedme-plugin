@@ -1,25 +1,30 @@
-// src/components/utils/Utils.tabs-xs
 import { h } from "preact";
 import { useGlobal } from "../context/GlobalContext";
 import { Mode } from "../types";
 import classNames from "classnames";
-import { IconHome, IconLink, IconTable } from "./assets/UtilsIcon";
+import { LuLandmark, LuLink2, LuBookA, LuImageDown } from "react-icons/lu";
 
 const TABS = [
   {
     id: "default" as const,
-    icon: <IconHome />,
+    icon: <LuLandmark size={`1.5em`} />,
+    // icon: <IconHome />,
     label: "기본",
   },
   {
     id: "string" as const,
-    icon: <IconTable />,
+    icon: <LuBookA size={`1.5em`} />,
     label: "문자열 검색",
   },
   {
     id: "url" as const,
-    icon: <IconLink />,
+    icon: <LuLink2 size={`1.5em`} />,
     label: "공유 링크",
+  },
+  {
+    id: "image" as const,
+    icon: <LuImageDown size={`1.5em`} />,
+    label: "이미지 추출",
   },
 ];
 
@@ -30,19 +35,24 @@ const UtilTab = ({ utilMode }: { utilMode: Mode }) => {
   return (
     <button
       role="tab"
-      className={classNames("tab", utilMode === mode && "tab-active")}
+      className={classNames(
+        "flex items-center gap-2 p-3 w-full border-l-2 hover:bg-gray-50 transition-colors",
+        utilMode === mode
+          ? "border-blue-500 bg-blue-50 text-blue-600"
+          : "border-transparent"
+      )}
       onClick={() => setMode(utilMode)}
       aria-selected={utilMode === mode}
     >
       {tab?.icon}
-      <span className="sr-only">{tab?.label}</span>
+      {/* <span>{tab?.label}</span> */}
     </button>
   );
 };
 
 const Utils: React.FC = () => {
   return (
-    <div role="tablist" className="tabs tabs-bordered">
+    <div role="tablist" className="flex flex-col border-r h-full">
       {TABS.map((tab) => (
         <UtilTab key={tab.id} utilMode={tab.id} />
       ))}

@@ -32,13 +32,12 @@ const StatusView: React.FC<StatusViewProps> = ({
   onRefreshMatch,
 }) => {
   return (
-    <div className="p-2 bg-base-100 rounded">
+    <div className="bg-base-100 rounded">
       {isLoading ? (
         <p className="text-black text-opacity-50 font-medium">Loading...</p>
       ) : fileKeyInfo ? (
         <div className="flex items-center justify-between">
           <div>
-            <span className="font-medium">✓ File Name:</span>{" "}
             <span>{fileKeyInfo.fileName}</span>
           </div>
           <button

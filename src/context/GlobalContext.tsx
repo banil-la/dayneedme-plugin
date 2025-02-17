@@ -33,7 +33,7 @@ export const GlobalContext = createContext<GlobalContextType>({
 });
 
 export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
-  const [mode, setMode] = useState<Mode>("default");
+  const [mode, setMode] = useState<Mode>("url");
   const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);

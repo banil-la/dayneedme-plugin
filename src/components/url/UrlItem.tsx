@@ -86,7 +86,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
   };
 
   return (
-    <li className="my-2 p-3 bg-base-100 rounded flex flex-col gap-2">
+    <li className="my-2 bg-base-100 rounded flex flex-col gap-2">
       <div className="flex justify-between items-start">
         <a
           href={`https://www.figma.com/design/${url.url}`}

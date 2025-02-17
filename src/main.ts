@@ -81,12 +81,47 @@ function handleUrlModeSelection() {
   }
 }
 
+function handleImageModeSelection() {
+  try {
+    const selection = figma.currentPage.selection;
+    const imageNodes = selection.filter(
+      (node) =>
+        node.type === "RECTANGLE" ||
+        node.type === "ELLIPSE" ||
+        node.type === "POLYGON" ||
+        node.type === "FRAME" ||
+        node.type === "COMPONENT" ||
+        node.type === "INSTANCE"
+    );
+
+    // 이미지 노드의 상세 정보를 전송
+    figma.ui.postMessage({
+      type: "IMAGE_SELECTION_CHANGED",
+      data: imageNodes.map((node) => ({
+        id: node.id,
+        name: node.name,
+        width: node.width,
+        height: node.height,
+        type: node.type,
+      })),
+    });
+  } catch (error) {
+    console.error("[main] Error in image mode selection:", error);
+    figma.ui.postMessage({
+      type: "IMAGE_SELECTION_CHANGED",
+      data: [],
+    });
+  }
+}
+
 function checkSelection() {
   // console.log("[main] Checking selection in mode:", currentMode);
   if (currentMode === "string") {
     handleStringModeSelection();
   } else if (currentMode === "url") {
     handleUrlModeSelection();
+  } else if (currentMode === "image") {
+    handleImageModeSelection();
   }
 }
 
@@ -184,6 +219,10 @@ export default function () {
 
   on("GET_SELECTED_TEXT", checkSelection);
 
+  on("GET_SELECTED_IMAGES", () => {
+    handleImageModeSelection();
+  });
+
   on<SetModeHandler>("SET_MODE", (mode) => {
     currentMode = mode;
     checkSelection();
@@ -279,6 +318,60 @@ export default function () {
     } catch (error) {
       // console.error("[Plugin] Error applying string code:", error);
       figma.notify("레이어 이름 변경에 실패했습니다", { error: true });
+    }
+  });
+
+  // 이미지 추출 핸들러
+  on("EXPORT_IMAGES", async function () {
+    try {
+      const selection = figma.currentPage.selection;
+      const imageNodes = selection.filter(
+        (node) =>
+          node.type === "RECTANGLE" ||
+          node.type === "ELLIPSE" ||
+          node.type === "POLYGON" ||
+          node.type === "FRAME" ||
+          node.type === "COMPONENT" ||
+          node.type === "INSTANCE"
+      );
+
+      if (imageNodes.length === 0) {
+        figma.ui.postMessage({
+          type: "EXPORT_ERROR",
+          error: "추출할 이미지가 없습니다.",
+        });
+        return;
+      }
+
+      // 각 노드에 대해 3배수 크기로 이미지 추출
+      for (const node of imageNodes) {
+        const bytes = await node.exportAsync({
+          format: "PNG",
+          constraint: {
+            type: "SCALE",
+            value: 3,
+          },
+        });
+
+        // 파일 이름 생성 (노드 이름 + @3x)
+        const fileName = `${node.name || "image"}@3x.png`;
+
+        // 다운로드를 위해 UI에 데이터 전송
+        figma.ui.postMessage({
+          type: "DOWNLOAD_IMAGE",
+          fileName: fileName,
+          bytes: bytes,
+        });
+      }
+
+      figma.ui.postMessage({ type: "EXPORT_COMPLETE" });
+      figma.notify(`${imageNodes.length}개의 이미지가 추출되었습니다.`);
+    } catch (error) {
+      console.error("[main] Error exporting images:", error);
+      figma.ui.postMessage({
+        type: "EXPORT_ERROR",
+        error: "이미지 추출 중 오류가 발생했습니다.",
+      });
     }
   });
 

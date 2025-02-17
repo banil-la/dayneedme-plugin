@@ -124,14 +124,14 @@ const UrlShare: React.FC<UrlShareProps> = ({ onUpdateRecentUrls }) => {
     : "URL을 공유할 프레임을 선택해 주세요";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 px-2">
       <div className="flex gap-2">
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.currentTarget.value)}
           placeholder={placeholderText}
-          className="flex-1 px-3"
+          className="flex-1 px-1"
           disabled={!isFrameSelected}
         />
         <button

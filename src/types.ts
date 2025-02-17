@@ -53,7 +53,7 @@ export interface GetUrlShareHandler extends EventHandler {
   }) => void;
 }
 
-export type Mode = "default" | "string" | "url";
+export type Mode = "default" | "string" | "url" | "image";
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 
@@ -102,6 +102,11 @@ export interface GlobalContextType {
 
 export interface GetSelectedTextHandler extends EventHandler {
   name: "GET_SELECTED_TEXT";
+  handler: () => void;
+}
+
+export interface GetSelectedImagesHandler extends EventHandler {
+  name: "GET_SELECTED_IMAGES";
   handler: () => void;
 }
 

@@ -17,7 +17,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-between p-4">
+    <div className="flex justify-between p-4 border-b">
       {user ? (
         <div className={`w-full flex items-center justify-between`}>
           <div className="flex items-center gap-2">

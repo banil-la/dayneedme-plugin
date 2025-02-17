@@ -8,6 +8,8 @@ import Login from "./auth/Login";
 import Utils from "./Mode";
 import UtilString from "./strings/UtilString";
 import UtilURL from "./url/UtilURL";
+import UtilImage from "./image/UtilImage";
+import SettingsSelector from "./SettingsSelector";
 // import SettingsSelector from "./SettingsSelector";
 
 const App: React.FC = () => {
@@ -24,21 +26,23 @@ const App: React.FC = () => {
         return <UtilString />;
       case "url":
         return <UtilURL />;
+      case "image":
+        return <UtilImage />;
       default:
         return null;
     }
   };
 
   return (
-    <div className="text-base w-full h-full overflow-x-hidden">
-      <div class="absolute top-0 left-0 bg-red-500 bg-opacity-50">
-        <p>DEV</p>
-
-        {/* <p>{JSON.stringify(user)}</p> */}
+    <div className="flex flex-col w-full h-full">
+      <div className="shrink-0">
+        <Profile />
+        <SettingsSelector />
       </div>
-      <Profile />
-      <Utils />
-      {renderModeContent()}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <Utils />
+        <div className="flex-1 overflow-auto">{renderModeContent()}</div>
+      </div>
     </div>
   );
 };

@@ -7,9 +7,7 @@ const SettingsSelector: React.FC = () => {
   return (
     <div className="settings-selector flex items-center justify-between border-y border-base-200 px-4 py-2">
       <div className="flex gap-2 items-center">
-        <label className="block text-sm font-medium">
-          운영체제 선택
-        </label>
+        <label className="block text-sm font-medium">OS</label>
         <select
           value={os}
           onChange={(e) =>
@@ -28,7 +26,7 @@ const SettingsSelector: React.FC = () => {
         </select>
       </div>
       <div className="flex gap-2 items-center">
-        <label className="block text-sm font-medium">제품 선택</label>
+        <label className="block text-sm font-medium">PROD</label>
         <select
           value={product}
           onChange={(e) =>
