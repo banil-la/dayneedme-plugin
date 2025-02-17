@@ -64,10 +64,10 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
     const handleMessage = (event: MessageEvent) => {
       const message = event.data.pluginMessage;
       if (message?.type === "CURRENT_FILENAME") {
-        console.log(
-          "[SearchFileModal] Received current file name:",
-          message.fileName
-        );
+        // console.log(
+        //   "[SearchFileModal] Received current file name:",
+        //   message.fileName
+        // );
         if (message.fileName) {
           setCurrentFile(message.fileName);
           setError(null);
@@ -84,7 +84,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
   }, []);
 
   const refreshCurrentFileName = () => {
-    console.log("[SearchFileModal] Refreshing current file name");
+    // console.log("[SearchFileModal] Refreshing current file name");
     setError(null);
     emit("GET_CURRENT_FILENAME");
   };
@@ -123,7 +123,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
         }
 
         const data = await response.json();
-        console.log("[SearchFileModal] File name updated successfully:", data);
+        // console.log("[SearchFileModal] File name updated successfully:", data);
         if (data) {
           setFileKeyInfo({
             fileName: currentFile,
@@ -134,7 +134,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
         }
         onClose();
       } catch (error) {
-        console.error("[SearchFileModal] Error updating file name:", error);
+        // console.error("[SearchFileModal] Error updating file name:", error);
         setFileKeyInfo(null);
         onClose();
       }

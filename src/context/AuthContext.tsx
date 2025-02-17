@@ -8,7 +8,6 @@ import { useAuthToken } from "../hooks/useAuthToken";
 import { getServerUrl } from "../utils/getServerUrl";
 import { AuthContextType, TokenData, UserInfo } from "../types";
 
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
@@ -119,49 +118,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
-      console.log("Access token refreshed:", data.access_token);
+      // console..log("Access token refreshed:", data.access_token);
       return {
         access_token: data.access_token,
         refresh_token: data.refresh_token || refreshToken,
       };
     } catch (error) {
-      console.error("Error refreshing access token:", error);
+      // console..error("Error refreshing access token:", error);
       return null;
     }
   };
 
   useEffect(() => {
     if (authToken) {
-      console.log("[AuthProvider] Fetching user info...");
+      // console..log("[AuthProvider] Fetching user info...");
       fetchUserInfo(authToken, refreshToken || "");
     } else {
-      console.log("[AuthProvider] No authToken, resetting user.");
+      // console..log("[AuthProvider] No authToken, resetting user.");
       setUser(null);
     }
   }, [authToken, refreshToken]);
 
   useEffect(() => {
-    console.log(
-      "AuthProvider: authToken changed =",
-      authToken ? "exist" : "not exist"
-    );
-    console.log(
-      "AuthProvider: refreshToken changed =",
-      refreshToken ? "exist" : "not exist"
-    );
+    // console.log(
+    //   "AuthProvider: authToken changed =",
+    //   authToken ? "exist" : "not exist"
+    // );
+    // console.log(
+    //   "AuthProvider: refreshToken changed =",
+    //   refreshToken ? "exist" : "not exist"
+    // );
   }, [authToken, refreshToken]);
 
   useEffect(() => {
     const handleLoadedToken = (event: MessageEvent) => {
-      console.log("[AuthContext] Received message:", event.data.pluginMessage);
+      // console..log("[AuthContext] Received message:", event.data.pluginMessage);
 
       if (event.data.pluginMessage?.type === "LOADED_TOKEN" && !authToken) {
         // authToken이 없을 때만
         const token = event.data.pluginMessage.token;
-        console.log(
-          "[AuthContext] Token loaded, emitting TOKEN_LOADED:",
-          token
-        );
+        // console..log(
+        //   "[AuthContext] Token loaded, emitting TOKEN_LOADED:",
+        //   token
+        // );
         setTokens(token);
         emit("TOKEN_LOADED", token);
       }
@@ -169,13 +168,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (!authToken) {
       // authToken이 없을 때만 LOAD_TOKEN 요청
-      console.log("[AuthContext] Setting up token load listener");
+      // console..log("[AuthContext] Setting up token load listener");
       window.addEventListener("message", handleLoadedToken);
-      console.log("[AuthContext] Emitting LOAD_TOKEN");
+      // console.log("[AuthContext] Emitting LOAD_TOKEN");
       emit("LOAD_TOKEN");
 
       return () => {
-        console.log("[AuthContext] Cleaning up token load listener");
+        // console.log("[AuthContext] Cleaning up token load listener");
         window.removeEventListener("message", handleLoadedToken);
       };
     }
@@ -221,7 +220,7 @@ const getUserInfo = async (token: string) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error getting user info:", error);
+    // console.error("Error getting user info:", error);
     throw error;
   }
 };

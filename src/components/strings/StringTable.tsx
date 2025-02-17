@@ -9,7 +9,6 @@ import StringItem from "./StringItem";
 import copyToClipboard from "../../hooks/copyToClipboard";
 import classNames from "classnames";
 
-
 const StringTable: React.FC = () => {
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [exactMatches, setExactMatches] = useState<StringData[]>([]);
@@ -21,88 +20,71 @@ const StringTable: React.FC = () => {
 
   // mode가 변경될 때마다 선택 상태 확인
   useEffect(() => {
-    console.log("[StringTable] Mode changed to:", mode);
+    // console.log("[StringTable] Mode changed to:", mode);
     if (mode === "string") {
-      console.log("[StringTable] Requesting selected text after mode change");
+      // console.log("[StringTable] Requesting selected text after mode change");
       emit("GET_SELECTED_TEXT");
     }
   }, [mode]);
 
   // 선택된 텍스트 감지
   useEffect(() => {
-    const checkSelection = () => {
-      console.log("[StringTable] Initial selection check");
-      emit("GET_SELECTED_TEXT");
-    };
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data.pluginMessage;
+      if (!message || typeof message !== "object") return;
 
-    // 초기 선택 확인
-    checkSelection();
+      if (message.type === "STRING_SELECTION_CHANGED") {
+        // console.log("[StringTable] String selection changed:", message.data);
+        const text = message.data;
+        setSelectedText(text);
+        setExactMatches([]);
+        setPartialMatches([]);
 
-    // 선택 변경 이벤트 구독
-    const unsubscribe = on(
-      "SELECTION_CHANGED",
-      async (value: string | boolean | null) => {
-        console.log("[StringTable] Selection changed:", {
-          value,
-          type: typeof value,
-          mode,
-        });
-
-        // String 모드에서는 문자열 또는 null이 전달됨
-        if (mode === "string") {
-          const text = typeof value === "string" ? value : null;
-          console.log("[StringTable] Processing string mode selection:", text);
-          setSelectedText(text);
-          setExactMatches([]);
-          setPartialMatches([]);
-
-          // 텍스트가 선택되었을 때만 검색
-          if (text) {
-            setIsLoading(true);
-            try {
-              const url = new URL(`${serverUrl}/api/string/text`);
-              url.searchParams.append('text', text);
-              url.searchParams.append('os', os);
-              url.searchParams.append('product', product);
-
-              console.log("[StringTable] Searching text:", url.toString());
-
-              const response = await fetch(url.toString(), {
-                headers: {
-                  Authorization: `Bearer ${authToken}`,
-                },
-              });
-
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-              }
-
-              const data: SearchResult = await response.json();
-              console.log("[StringTable] Search results:", data);
-              setExactMatches(data.exact_matched);
-              setPartialMatches(data.partial_matched);
-            } catch (error) {
-              console.error("[StringTable] Error searching strings:", error);
-              figma.notify("문자열 검색 중 오류가 발생했습니다", {
-                error: true,
-              });
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        } else if (mode === "url") {
-          // URL 모드인 경우 선택 상태 초기화
-          setSelectedText(null);
-          setExactMatches([]);
-          setPartialMatches([]);
+        if (text) {
+          setIsLoading(true);
+          searchText(text).catch(console.error);
         }
       }
-    );
-
-    return () => {
-      unsubscribe();
     };
-  }, [mode, os, product, authToken]); // 의존성 배열 정리
+
+    window.addEventListener("message", handleMessage);
+    emit("GET_SELECTED_TEXT"); // 초기 선택 상태 확인
+
+    return () => window.removeEventListener("message", handleMessage);
+  }, [mode, os, product, authToken]);
+
+  const searchText = async (text: string) => {
+    try {
+      const url = new URL(`${serverUrl}/api/string/text`);
+      url.searchParams.append("text", text);
+      url.searchParams.append("os", os);
+      url.searchParams.append("product", product);
+
+      // console.log("[StringTable] Searching text:", url.toString());
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: SearchResult = await response.json();
+      // console.log("[StringTable] Search results:", data);
+      setExactMatches(data.exact_matched);
+      setPartialMatches(data.partial_matched);
+    } catch (error) {
+      // console.error("[StringTable] Error searching strings:", error);
+      figma.notify("문자열 검색 중 오류가 발생했습니다", {
+        error: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCopy = (text: string) => {
     copyToClipboard(text);
@@ -111,11 +93,22 @@ const StringTable: React.FC = () => {
 
   return (
     <div className="string-table">
-        <div className="mb-4">
-          <div className="bg-base-100 p-2 rounded flex justify-between items-center">
-            <p className={classNames("w-full text-center", selectedText ? "text-black dark:text-white" : "text-gray-300 dark:text-gray-300")}>{selectedText? selectedText: "검증을 위한 문자열을 선택해 주세요."}</p>
-          </div>
+      <div className="mb-4">
+        <div className="bg-base-100 p-2 rounded flex justify-between items-center">
+          <p
+            className={classNames(
+              "w-full text-center",
+              selectedText
+                ? "text-black dark:text-white"
+                : "text-gray-300 dark:text-gray-300"
+            )}
+          >
+            {selectedText
+              ? selectedText
+              : "검증을 위한 문자열을 선택해 주세요."}
+          </p>
         </div>
+      </div>
 
       {isLoading ? (
         <p>검색 중...</p>
@@ -123,13 +116,12 @@ const StringTable: React.FC = () => {
         <div className="space-y-4">
           {exactMatches.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-2">정확히 일치하는 문자열</h3>
+              <h3 className="text-lg font-medium mb-2">
+                정확히 일치하는 문자열
+              </h3>
               <ul className="space-y-2">
                 {exactMatches.map((item) => (
-                  <StringItem
-                    key={item.id}
-                    item={item}
-                  />
+                  <StringItem key={item.id} item={item} />
                 ))}
               </ul>
             </div>
@@ -137,13 +129,12 @@ const StringTable: React.FC = () => {
 
           {partialMatches.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-2">검색어를 포함하는 문자열</h3>
+              <h3 className="text-lg font-medium mb-2">
+                검색어를 포함하는 문자열
+              </h3>
               <ul className="space-y-2">
                 {partialMatches.map((item) => (
-                  <StringItem
-                    key={item.id}
-                    item={item}
-                  />
+                  <StringItem key={item.id} item={item} />
                 ))}
               </ul>
             </div>

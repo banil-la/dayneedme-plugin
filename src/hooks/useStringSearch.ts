@@ -19,9 +19,9 @@ export function useStringSearch() {
     setIsLoading(true);
     try {
       const url = new URL(`${getServerUrl()}/api/string/text`);
-      url.searchParams.append('text', text.trim());
-      url.searchParams.append('os', os);
-      url.searchParams.append('product', product);
+      url.searchParams.append("text", text.trim());
+      url.searchParams.append("os", os);
+      url.searchParams.append("product", product);
 
       const response = await fetch(url.toString(), {
         headers: {
@@ -36,7 +36,7 @@ export function useStringSearch() {
       const data = await response.json();
       setResults(data);
     } catch (error) {
-      console.error("[StringSearch] Error searching:", error);
+      // console.error("[StringSearch] Error searching:", error);
       setResults(null);
     } finally {
       setIsLoading(false);
@@ -44,4 +44,4 @@ export function useStringSearch() {
   };
 
   return { results, isLoading, searchStrings };
-} 
+}

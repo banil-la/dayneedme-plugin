@@ -6,7 +6,7 @@ const LogoutButton: React.FC = () => {
   const { setTokens } = useAuth();
 
   const handleLogout = () => {
-    console.log("Logout button clicked");
+    // console.log("Logout button clicked");
     setTokens(null); // Clear the token
     emit("DELETE_TOKEN"); // Emit an event to delete the token from storage
   };

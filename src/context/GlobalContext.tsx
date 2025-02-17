@@ -33,11 +33,16 @@ export const GlobalContext = createContext<GlobalContextType>({
 });
 
 export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
-  const [mode, setMode] = useState<Mode>("string");
+  const [mode, setMode] = useState<Mode>("default");
   const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
+
+  // 모드 변경 시 이벤트 발송
+  useEffect(() => {
+    emit("MODE_CHANGED", mode);
+  }, [mode]);
 
   // 초기 설정 로드 - 컴포넌트 마운트 시 즉시 실행
   useEffect(() => {
@@ -47,7 +52,7 @@ export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
     // 설정 로드 이벤트 리스너
     const unsubscribeLoad = on("STRING_SETTINGS_LOADED", (settings) => {
       if (settings) {
-        console.log("[GlobalContext] Loading settings:", settings);
+        // console.log("[GlobalContext] Loading settings:", settings);
         setOS(settings.os);
         setProduct(settings.product);
       }
@@ -55,25 +60,25 @@ export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
 
     // 설정 저장 이벤트 리스너 추가
     const unsubscribeSave = on("STRING_SETTINGS_SAVED", (settings) => {
-      console.log("[GlobalContext] Settings saved:", settings);
+      // console.log("[GlobalContext] Settings saved:", settings);
     });
 
     return () => {
       unsubscribeLoad();
-      unsubscribeSave();  // cleanup
+      unsubscribeSave(); // cleanup
     };
   }, []);
 
   // 설정 변경 시 저장
   useEffect(() => {
     const settings = { os, product };
-    console.log("[GlobalContext] Saving settings:", settings);
+    // console.log("[GlobalContext] Saving settings:", settings);
     emit("SAVE_STRING_SETTINGS", settings);
   }, [os, product]); // os나 product가 변경될 때마다 저장
 
   // 메시지 핸들러 설정
   useEffect(() => {
-    console.log("[GlobalContext] Setting up message handlers");
+    // console.log("[GlobalContext] Setting up message handlers");
 
     const handleMessage = (event: MessageEvent) => {
       const message = event.data.pluginMessage;
@@ -109,9 +114,7 @@ export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
   };
 
   return (
-    <GlobalContext.Provider value={value}>
-      {children}
-    </GlobalContext.Provider>
+    <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
   );
 };
 

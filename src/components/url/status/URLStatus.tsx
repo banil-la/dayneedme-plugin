@@ -19,7 +19,7 @@ const URLStatus: React.FC = () => {
     setError(null);
 
     if (!currentFileName) {
-      console.log("[URLStatus] No current file name available.");
+      // console.log("[URLStatus] No current file name available.");
       setError("현재 파일명을 가져올 수 없습니다.");
       setIsLoading(false);
       return;
@@ -49,7 +49,7 @@ const URLStatus: React.FC = () => {
         setFileKeyInfo(null);
       }
     } catch (error) {
-      console.error("[URLStatus] Error fetching file key info:", error);
+      // console.error("[URLStatus] Error fetching file key info:", error);
       setError(
         error instanceof Error ? error.message : "알 수 없는 오류가 발생했어요."
       );
@@ -64,31 +64,31 @@ const URLStatus: React.FC = () => {
   }, [currentFileName, authToken]);
 
   const handleRegisterClick = () => {
-    console.log("[URLStatus] Opening registration modal");
+    // console.log("[URLStatus] Opening registration modal");
     setIsModalOpen(true);
   };
 
   const handleSearchClick = () => {
-    console.log("[URLStatus] Opening search modal");
+    // console.log("[URLStatus] Opening search modal");
     setIsSearchModalOpen(true);
   };
 
   const handleModalClose = () => {
-    console.log("[URLStatus] Closing modal");
+    // console.log("[URLStatus] Closing modal");
     setIsModalOpen(false);
     setIsSearchModalOpen(false);
   };
 
   const handleRefreshMatch = async () => {
-    console.log("[URLStatus] Refreshing file key match");
+    // console.log("[URLStatus] Refreshing file key match");
     await fetchFileKeyInfo();
   };
 
   const handleFileKeyExtract = async (fileKey: string) => {
-    console.log("[URLStatus] handleFileKeyExtract called with:", fileKey);
+    // console.log("[URLStatus] handleFileKeyExtract called with:", fileKey);
     try {
       if (!currentFileName) {
-        console.error("[URLStatus] Current file name is empty");
+        // console.error("[URLStatus] Current file name is empty");
         setError("현재 파일명을 가져올 수 없습니다.");
         return;
       }
@@ -97,7 +97,7 @@ const URLStatus: React.FC = () => {
         id: fileKey,
         title: currentFileName,
       };
-      console.log("[URLStatus] Sending request with data:", requestData);
+      // console.log("[URLStatus] Sending request with data:", requestData);
 
       const response = await fetch(`${getServerUrl()}/api/filekey/`, {
         method: "POST",
@@ -109,7 +109,7 @@ const URLStatus: React.FC = () => {
       });
 
       const responseText = await response.text();
-      console.log("[URLStatus] Raw response:", responseText);
+      // console.log("[URLStatus] Raw response:", responseText);
 
       if (!response.ok) {
         let errorDetail;
@@ -123,17 +123,17 @@ const URLStatus: React.FC = () => {
       }
 
       const data = JSON.parse(responseText);
-      console.log("[URLStatus] Registration successful:", data);
+      // console.log("[URLStatus] Registration successful:", data);
 
       setFileKeyInfo(data);
-      console.log("[URLStatus] FileKeyInfo updated");
+      // console.log("[URLStatus] FileKeyInfo updated");
 
       setIsModalOpen(false);
 
       // 파일키 등록 후 자동으로 파일명 검색 시도
       await fetchFileKeyInfo();
     } catch (error) {
-      console.error("[URLStatus] Registration failed:", error);
+      // console.error("[URLStatus] Registration failed:", error);
       setError(
         error instanceof Error
           ? error.message

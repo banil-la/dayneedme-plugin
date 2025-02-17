@@ -16,25 +16,25 @@ const UtilURL: React.FC = () => {
   } | null>(null);
 
   const handleUpdateRecentUrls = () => {
-    console.log("[UrlManager] Updating recent URLs");
+    // console.log("[UrlManager] Updating recent URLs");
     setRefreshKey((prev) => prev + 1);
   };
 
   useEffect(() => {
     const handleFileKeyInfo = (event: MessageEvent) => {
       if (event.data.pluginMessage?.type === "FILE_KEY_INFO") {
-        console.log(
-          "[UtilURL] Setting file key info:",
-          event.data.pluginMessage.info
-        );
+        // console.log(
+        //   "[UtilURL] Setting file key info:",
+        //   event.data.pluginMessage.info
+        // );
         setFileKeyInfo(event.data.pluginMessage.info);
       }
     };
 
-    console.log("[UtilURL] Adding message listener");
+    // console.log("[UtilURL] Adding message listener");
     window.addEventListener("message", handleFileKeyInfo);
     return () => {
-      console.log("[UtilURL] Removing message listener");
+      // console.log("[UtilURL] Removing message listener");
       window.removeEventListener("message", handleFileKeyInfo);
     };
   }, []);

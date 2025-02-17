@@ -13,7 +13,7 @@ export default function copyToClipboard(text: string) {
       throw new Error("Copy command was unsuccessful");
     }
   } catch (error) {
-    console.error("Failed to copy text to clipboard", error);
+    // console.error("Failed to copy text to clipboard", error);
     alert("Failed to copy link. Please try again.");
   } finally {
     document.body.removeChild(textArea);

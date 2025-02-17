@@ -31,7 +31,7 @@ function Plugin() {
 
   // SELECTION_CHANGED 이벤트 핸들러 추가
   on("SELECTION_CHANGED", (text: string | null) => {
-    console.log("[UI] Selection changed:", text);
+    // console.log("[UI] Selection changed:", text);
   });
 
   return (

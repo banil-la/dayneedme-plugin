@@ -26,7 +26,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
     if (!description.trim()) return;
     setIsLoading(true);
     try {
-      console.log("[UrlItem] Updating description:", description.trim());
+      // console.log("[UrlItem] Updating description:", description.trim());
 
       const response = await fetch(`${getServerUrl()}/api/url/${url.url_id}`, {
         method: "PUT",
@@ -38,7 +38,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
       });
 
       const data = await response.json();
-      console.log("[UrlItem] Update response:", data);
+      // console.log("[UrlItem] Update response:", data);
 
       if (!response.ok) {
         throw new Error(data.detail || "Failed to update description");
@@ -50,7 +50,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
       // 목록 새로고침
       onUpdate();
     } catch (error) {
-      console.error("[UrlItem] Error:", error);
+      // console.error("[UrlItem] Error:", error);
       alert("설명 수정에 실패했습니다.");
       // 실패 시 원래 설명으로 복원
       setDescription(url.description);
@@ -78,7 +78,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
 
       onUpdate();
     } catch (error) {
-      console.error("[UrlItem] Error:", error);
+      // console.error("[UrlItem] Error:", error);
       alert("URL 삭제에 실패했습니다.");
     } finally {
       setIsLoading(false);

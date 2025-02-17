@@ -32,7 +32,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
       const match = url.match(/(?:file|design)\/([^/?]+)/);
       if (match) {
         setExtractedKey(match[1]);
-        console.log("[RegisterFileModal] Extracted file key:", match[1]);
+        // console..log("[RegisterFileModal] Extracted file key:", match[1]);
       } else {
         setExtractedKey(null);
       }
@@ -43,16 +43,16 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
-    console.log(
-      "[RegisterFileModal] Submit clicked, extractedKey:",
-      extractedKey
-    );
+    // console..log(
+    //   "[RegisterFileModal] Submit clicked, extractedKey:",
+    //   extractedKey
+    // );
     if (extractedKey) {
       refreshCurrentFileName(); // 파일명 새로 고침
-      console.log(
-        "[RegisterFileModal] Calling onSubmit with key:",
-        extractedKey
-      );
+      // console.log(
+      //   "[RegisterFileModal] Calling onSubmit with key:",
+      //   extractedKey
+      // );
       onSubmit(extractedKey);
     }
   };
@@ -65,10 +65,10 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     const handleMessage = (event: MessageEvent) => {
       const message = event.data.pluginMessage;
       if (message?.type === "CURRENT_FILENAME") {
-        console.log(
-          "[RegisterFileModal] Received current file name:",
-          message.fileName
-        );
+        // console.log(
+        //   "[RegisterFileModal] Received current file name:",
+        //   message.fileName
+        // );
         setCurrentFile(message.fileName);
       }
     };
@@ -79,7 +79,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
 
   const handleRegister = async () => {
     if (!authToken) {
-      console.error("No auth token available");
+      // console.error("No auth token available");
       return;
     }
 
@@ -104,7 +104,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
       const data = await response.json();
       // 등록 성공 처리
     } catch (error) {
-      console.error("Error registering file key:", error);
+      // console.error("Error registering file key:", error);
     }
   };
 
@@ -112,7 +112,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
     try {
       emit("GET_SHARE_LINK");
     } catch (error) {
-      console.error("Error requesting share link:", error);
+      // console.error("Error requesting share link:", error);
     }
   };
 
@@ -123,7 +123,7 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
         if (message.link) {
           setUrl(message.link);
         } else {
-          console.log("No share link available");
+          // console.log("No share link available");
         }
       }
     };
@@ -170,10 +170,10 @@ const RegisterFileModal: React.FC<RegisterFileModalProps> = ({
             type="text"
             value={url}
             onChange={(e) => {
-              console.log(
-                "[RegisterFileModal] URL input changed:",
-                e.currentTarget.value
-              );
+              // console.log(
+              //   "[RegisterFileModal] URL input changed:",
+              //   e.currentTarget.value
+              // );
               setUrl(e.currentTarget.value);
             }}
             placeholder="https://www.figma.com/file/... 또는 design/..."
