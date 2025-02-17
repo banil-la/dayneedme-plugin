@@ -94,7 +94,7 @@ const UrlItem: React.FC<UrlItemProps> = ({ url, authToken, onUpdate }) => {
           rel="noopener noreferrer"
           className="text-base text-blue-500 hover:underline"
         >
-          {`https://dayneed.it/s/${url.url_id}`}
+          {`https://banil.la/s/${url.url_id}`}
         </a>
         <div className="flex gap-2">
           <button
