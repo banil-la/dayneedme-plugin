@@ -15,4 +15,4 @@ export const plugin = {
 };
 export const devServerUrl = "http://localhost:8080";
 export const prodServerUrl = "https://py-prod-adot.vercel.app";
-export const serviceUrl = "https://dayneed.me";
+export const serviceUrl = "https://dayneed.it";
