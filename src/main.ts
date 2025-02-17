@@ -7,6 +7,7 @@ import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
+const MODE_KEY = "CURRENT_MODE";
 let currentMode: Mode = "history"; // 기본 모드
 // let currentMode: Mode = "string"; // 임시
 
@@ -372,6 +373,31 @@ export default function () {
         type: "EXPORT_ERROR",
         error: "이미지 추출 중 오류가 발생했습니다.",
       });
+    }
+  });
+
+  // 모드 저장 핸들러
+  on("SAVE_MODE", async (mode: Mode) => {
+    try {
+      await figma.clientStorage.setAsync(MODE_KEY, mode);
+      currentMode = mode;
+      emit("MODE_CHANGED", mode);
+    } catch (error) {
+      handleError("MODE_SAVE", error);
+    }
+  });
+
+  // 모드 로드 핸들러
+  on("LOAD_MODE", async () => {
+    try {
+      const savedMode = await figma.clientStorage.getAsync(MODE_KEY);
+      if (savedMode) {
+        currentMode = savedMode;
+        emit("MODE_LOADED", savedMode);
+        emit("MODE_CHANGED", savedMode);
+      }
+    } catch (error) {
+      handleError("MODE_LOAD", error);
     }
   });
 

@@ -10,7 +10,11 @@ interface SearchResultsTableProps {
   onSearch: (text: string) => Promise<void>;
 }
 
-export function SearchResultsTable({ results, isLoading, onSearch }: SearchResultsTableProps) {
+export function SearchResultsTable({
+  results,
+  isLoading,
+  onSearch,
+}: SearchResultsTableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleSearch = async (text: string) => {
@@ -23,13 +27,15 @@ export function SearchResultsTable({ results, isLoading, onSearch }: SearchResul
   };
 
   return (
-    <div className={`inset-x-0 transition-all duration-200 shadow-lg rounded-t-lg p-4 z-10`}>
+    <div
+      className={`inset-x-0 transition-all duration-200 shadow-lg rounded-t-lg z-10`}
+    >
       <div className="sticky top-0 bg-base-100">
         <StringSearch onSearch={handleSearch} />
       </div>
       {isExpanded && (
         <div className="overflow-auto">
-          <StringResults 
+          <StringResults
             results={results || { exact_matched: [], partial_matched: [] }}
             isLoading={isLoading}
             emptyMessage="검색 결과가 없습니다"
@@ -38,4 +44,4 @@ export function SearchResultsTable({ results, isLoading, onSearch }: SearchResul
       )}
     </div>
   );
-} 
+}

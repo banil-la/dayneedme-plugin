@@ -3,40 +3,36 @@
 import { createContext, h, JSX } from "preact";
 import { useContext, useEffect, useState } from "preact/hooks";
 import { emit, on } from "@create-figma-plugin/utilities";
-import { Mode, OS, Product, FileKeyInfo } from "../types";
+import { Mode, OS, Product, FileKeyInfo, GlobalContextType } from "../types";
 
-interface GlobalContextType {
-  mode: Mode;
-  setMode: (mode: Mode) => void;
-  os: OS;
-  setOS: (os: OS) => void;
-  product: Product;
-  setProduct: (product: Product) => void;
-  fileKeyInfo: FileKeyInfo | null;
-  setFileKeyInfo: (info: FileKeyInfo | null) => void;
-  currentFileName: string;
-  setCurrentFileName: (fileName: string) => void;
-}
+const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 
-export const GlobalContext = createContext<GlobalContextType>({
-  mode: "history",
-  setMode: () => {},
-  os: "ios",
-  setOS: () => {},
-  product: "adotphone",
-  setProduct: () => {},
-  fileKeyInfo: null,
-  setFileKeyInfo: () => {},
-  currentFileName: "",
-  setCurrentFileName: () => {},
-});
-
-export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
-  const [mode, setMode] = useState<Mode>("history");
+export function GlobalProvider({ children }: { children: JSX.Element }) {
+  const [mode, setModeState] = useState<Mode>("history");
   const [os, setOS] = useState<OS>("ios");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
+
+  // 모드 변경 시 Figma storage에 저장
+  const setMode = (newMode: Mode) => {
+    setModeState(newMode);
+    emit("SAVE_MODE", newMode);
+  };
+
+  // 초기 모드 로드
+  useEffect(() => {
+    emit("LOAD_MODE");
+
+    const handleModeLoaded = (loadedMode: Mode) => {
+      setModeState(loadedMode);
+    };
+
+    on("MODE_LOADED", handleModeLoaded);
+    return () => {
+      // cleanup
+    };
+  }, []);
 
   // 모드 변경 시 이벤트 발송
   useEffect(() => {
@@ -115,6 +111,12 @@ export const GlobalProvider = ({ children }: { children: JSX.Element }) => {
   return (
     <GlobalContext.Provider value={value}>{children}</GlobalContext.Provider>
   );
-};
+}
 
-export const useGlobal = () => useContext(GlobalContext);
+export function useGlobal() {
+  const context = useContext(GlobalContext);
+  if (context === undefined) {
+    throw new Error("useGlobal must be used within a GlobalProvider");
+  }
+  return context;
+}

@@ -125,6 +125,21 @@ export interface SetModeHandler extends EventHandler {
   handler: (mode: Mode) => void;
 }
 
+export interface SaveModeHandler extends EventHandler {
+  name: "SAVE_MODE";
+  handler: (mode: Mode) => void;
+}
+
+export interface LoadModeHandler extends EventHandler {
+  name: "LOAD_MODE";
+  handler: () => void;
+}
+
+export interface ModeLoadedHandler extends EventHandler {
+  name: "MODE_LOADED";
+  handler: (mode: Mode) => void;
+}
+
 export interface CompareFilenameHandler extends EventHandler {
   name: "COMPARE_FILENAME";
   handler: (data: { selectedTitle: string }) => void;

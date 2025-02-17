@@ -66,7 +66,7 @@ const UtilHome: React.FC = () => {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-2">
       <div className="space-y-4">
         {histories.map((history) => (
           <div
