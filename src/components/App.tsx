@@ -11,6 +11,7 @@ import UtilURL from "./url/UtilURL";
 import UtilImage from "./image/UtilImage";
 import SettingsSelector from "./SettingsSelector";
 import UtilHistory from "./history/UtilHistory";
+import UtilFigma from "./figma/UtilFIgma";
 // import SettingsSelector from "./SettingsSelector";
 
 const App: React.FC = () => {
@@ -31,6 +32,8 @@ const App: React.FC = () => {
         return <UtilURL />;
       case "image":
         return <UtilImage />;
+      case "figma":
+        return <UtilFigma />;
       default:
         return null;
     }

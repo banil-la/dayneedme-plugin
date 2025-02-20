@@ -2,7 +2,13 @@ import { h } from "preact";
 import { useGlobal } from "../context/GlobalContext";
 import { Mode } from "../types";
 import classNames from "classnames";
-import { LuLandmark, LuLink2, LuBookA, LuImageDown } from "react-icons/lu";
+import {
+  LuLandmark,
+  LuLink2,
+  LuBookA,
+  LuImageDown,
+  LuFigma,
+} from "react-icons/lu";
 
 const TABS = [
   {
@@ -25,6 +31,11 @@ const TABS = [
     id: "image" as const,
     icon: <LuImageDown size={`1.5em`} />,
     label: "추출",
+  },
+  {
+    id: "figma" as const,
+    icon: <LuFigma size={`1.5em`} />,
+    label: "피그마",
   },
 ];
 

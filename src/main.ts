@@ -62,19 +62,19 @@ function handleStringModeSelection() {
 function handleUrlModeSelection() {
   try {
     const selection = figma.currentPage.selection;
-    // console.log("[main] URL mode selection:", {
-    //   selectionLength: selection.length,
-    //   selectionTypes: selection.map((node) => node.type),
-    // });
+    const validTypes = ["FRAME", "GROUP", "COMPONENT", "INSTANCE", "SECTION"];
 
-    const hasValidSelection = selection.length > 0;
-    // console.log("[main] Frame/layer selected:", hasValidSelection);
+    // 선택된 노드 중 유효한 타입이 있는지 확인
+    const hasValidSelection = selection.some((node) =>
+      validTypes.includes(node.type)
+    );
+
     figma.ui.postMessage({
       type: "URL_SELECTION_CHANGED",
       data: hasValidSelection,
     });
   } catch (error) {
-    // console.error("[main] Error in URL mode selection:", error);
+    console.error("[main] Error in URL mode selection:", error);
     figma.ui.postMessage({
       type: "URL_SELECTION_CHANGED",
       data: false,
