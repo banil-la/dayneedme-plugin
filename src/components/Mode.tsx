@@ -8,34 +8,40 @@ import {
   LuBookA,
   LuImageDown,
   LuFigma,
+  LuHistory,
+  LuListCollapse,
 } from "react-icons/lu";
 
 const TABS = [
   {
     id: "history" as const,
     icon: <LuLandmark size={`1.5em`} />,
-    // icon: <IconHome />,
-    label: "기록",
+    label: "History",
   },
   {
     id: "string" as const,
     icon: <LuBookA size={`1.5em`} />,
-    label: "문자열",
+    label: "String",
   },
   {
     id: "url" as const,
     icon: <LuLink2 size={`1.5em`} />,
-    label: "공유",
+    label: "Share",
   },
   {
     id: "image" as const,
     icon: <LuImageDown size={`1.5em`} />,
-    label: "추출",
+    label: "Extract",
   },
   {
-    id: "figma" as const,
-    icon: <LuFigma size={`1.5em`} />,
-    label: "피그마",
+    id: "figma-version" as const,
+    icon: <LuHistory size={`1.5em`} />,
+    label: "Version",
+  },
+  {
+    id: "figma-index" as const,
+    icon: <LuListCollapse size={`1.5em`} />,
+    label: "Index",
   },
 ];
 

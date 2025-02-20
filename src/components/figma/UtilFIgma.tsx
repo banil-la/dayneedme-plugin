@@ -11,7 +11,7 @@ import FigmaVersionList from "./FigmaVersionList";
 const UtilFigma: React.FC = () => {
   const { mode } = useGlobal();
 
-  if (mode !== "figma") {
+  if (mode !== "figma-version") {
     return null;
   }
 

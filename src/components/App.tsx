@@ -32,8 +32,10 @@ const App: React.FC = () => {
         return <UtilURL />;
       case "image":
         return <UtilImage />;
-      case "figma":
+      case "figma-version":
         return <UtilFigma />;
+      case "figma-index":
+        return <p>figma-index</p>;
       default:
         return null;
     }

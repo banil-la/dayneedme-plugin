@@ -20,6 +20,9 @@ export interface AuthContextType {
   setTokens: (tokenData: TokenData | null) => void;
   isLoading: boolean;
   user: UserInfo | null;
+  refreshAccessToken: (
+    currentRefreshToken: string
+  ) => Promise<TokenData | null>;
 }
 
 // handlers
@@ -53,7 +56,13 @@ export interface GetUrlShareHandler extends EventHandler {
   }) => void;
 }
 
-export type Mode = "history" | "string" | "url" | "image" | "figma";
+export type Mode =
+  | "history"
+  | "string"
+  | "url"
+  | "image"
+  | "figma-version"
+  | "figma-index";
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 

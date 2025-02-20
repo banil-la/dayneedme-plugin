@@ -11,20 +11,21 @@ import { AuthContextType, TokenData, UserInfo } from "../types";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_REFRESH_INTERVAL = 10 * 60 * 1000; // 10분마다 토큰 갱신
 
-interface AuthProviderProps {
-  children: ComponentChildren;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ComponentChildren }> = ({
+  children,
+}) => {
   const [authToken, refreshToken, setTokens, isLoading] = useAuthToken();
   const [user, setUser] = useState<UserInfo | null>(null);
-  const serverUrl = getServerUrl();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshAccessToken = async (
     currentRefreshToken: string
   ): Promise<TokenData | null> => {
+    if (isRefreshing) return null;
+
     try {
-      const response = await fetch(`${serverUrl}/api/auth/refresh`, {
+      setIsRefreshing(true);
+      const response = await fetch(`${getServerUrl()}/api/auth/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,13 +45,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Error refreshing access token:", error);
       return null;
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
-  const fetchUserInfo = async (token: string, currentRefreshToken: string) => {
+  const fetchUserInfo = async (token: string) => {
     try {
-      const response = await fetch(`${serverUrl}/api/auth/user`, {
-        method: "GET",
+      const response = await fetch(`${getServerUrl()}/api/auth/user`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -58,22 +60,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (!response.ok) {
-        if (response.status === 401 && currentRefreshToken) {
-          console.log("Token expired, attempting refresh...");
-          const newTokenData = await refreshAccessToken(currentRefreshToken);
+        if (response.status === 401 && refreshToken) {
+          // 토큰이 만료된 경우 갱신 시도
+          const newTokenData = await refreshAccessToken(refreshToken);
           if (newTokenData) {
             setTokens(newTokenData);
             // 새 토큰으로 다시 시도
-            return fetchUserInfo(
-              newTokenData.access_token,
-              newTokenData.refresh_token
-            );
+            return fetchUserInfo(newTokenData.access_token);
           } else {
-            console.error("Refresh token expired. Logging out.");
+            // 갱신 실패 시 로그아웃
             setTokens(null);
             setUser(null);
           }
-          return;
         }
         throw new Error("Failed to fetch user information");
       }
@@ -91,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // 토큰 자동 갱신
+  // 주기적인 토큰 갱신
   useEffect(() => {
     if (!authToken || !refreshToken) return;
 
@@ -100,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (newTokenData) {
         setTokens(newTokenData);
       } else {
+        // 갱신 실패 시 로그아웃
         setTokens(null);
         setUser(null);
       }
@@ -115,11 +114,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // 토큰이 변경될 때마다 사용자 정보 갱신
   useEffect(() => {
     if (authToken) {
-      fetchUserInfo(authToken, refreshToken || "");
+      fetchUserInfo(authToken);
     } else {
       setUser(null);
     }
-  }, [authToken, refreshToken]);
+  }, [authToken]);
 
   // 초기 토큰 로드
   useEffect(() => {
@@ -149,6 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setTokens,
         isLoading,
         user,
+        refreshAccessToken, // 토큰 갱신 함수를 context를 통해 노출
       }}
     >
       {children}
