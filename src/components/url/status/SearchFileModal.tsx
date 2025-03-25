@@ -21,14 +21,12 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
   currentFileName,
 }) => {
   const { authToken } = useAuth();
-  const { setFileKeyInfo } = useGlobal();
+  const { fileKeyInfo } = useGlobal();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fileList, setFileList] = useState<FileKeyItem[]>([]);
-  const [currentFile, setCurrentFile] = useState(currentFileName);
 
   useEffect(() => {
-    // 등록된 파일 목록 로드
     const loadFileList = async () => {
       try {
         const response = await fetch(`${getServerUrl()}/api/filekey/list`, {
@@ -69,12 +67,9 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
         //   message.fileName
         // );
         if (message.fileName) {
-          setCurrentFile(message.fileName);
           setError(null);
         } else {
-          setError(
-            "현재 파일명을 가져올 수 없습니다. 새로고침을 시도해주세요."
-          );
+          setError("현재 파일명을 가져올 수 없습니다. 새로고침을 눌러주세요.");
         }
       }
     };
@@ -90,7 +85,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
   };
 
   const handleSelect = async (fileKey: string, fileName: string) => {
-    if (!currentFile) {
+    if (!currentFileName) {
       setError(
         "현재 파일명을 가져올 수 없습니다. 새로고침 후 다시 시도해주세요."
       );
@@ -98,7 +93,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
     }
 
     const confirmUpdate = confirm(
-      `Supabase에 등록된 파일명을 현재 파일명 '${currentFile}'으로 변경하시겠습니까?`
+      `Supabase에 등록된 파일명을 현재 파일명 '${currentFileName}'으로 변경하시겠습니까?`
     );
 
     if (confirmUpdate) {
@@ -113,7 +108,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
             },
             body: JSON.stringify({
               id: fileKey,
-              title: currentFile,
+              title: currentFileName,
             }),
           }
         );
@@ -122,21 +117,13 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
           throw new Error("파일명 업데이트에 실패했습니다.");
         }
 
-        const data = await response.json();
-        // console.log("[SearchFileModal] File name updated successfully:", data);
-        if (data) {
-          setFileKeyInfo({
-            fileName: currentFile,
-            fileKey,
-          });
-        } else {
-          setFileKeyInfo(null);
-        }
         onClose();
       } catch (error) {
-        // console.error("[SearchFileModal] Error updating file name:", error);
-        setFileKeyInfo(null);
-        onClose();
+        setError(
+          error instanceof Error
+            ? error.message
+            : "파일명 업데이트에 실패했습니다."
+        );
       }
     }
   };
@@ -162,8 +149,8 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
               🔄 새로고침
             </button>
           </div>
-          {currentFile ? (
-            <p className="text-sm bg-gray-100 p-2 rounded">{currentFile}</p>
+          {currentFileName ? (
+            <p className="text-sm bg-gray-100 p-2 rounded">{currentFileName}</p>
           ) : (
             <p className="text-sm text-red-500 bg-red-50 p-2 rounded">
               파일명을 가져올 수 없습니다. 새로고침을 눌러주세요.
@@ -185,7 +172,7 @@ const SearchFileModal: React.FC<SearchFileModalProps> = ({
           }}
           placeholder="파일명 선택..."
           className="mb-4"
-          isDisabled={!currentFile}
+          isDisabled={!currentFileName}
         />
 
         {error && (

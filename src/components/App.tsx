@@ -12,12 +12,12 @@ import UtilImage from "./image/UtilImage";
 import SettingsSelector from "./SettingsSelector";
 import UtilHistory from "./history/UtilHistory";
 import UtilFigma from "./figma/UtilFIgma";
-// import SettingsSelector from "./SettingsSelector";
+import UtilFigmaIndex from "./figma/UtilFigmaIndex";
+import { useEffect, useState } from "preact/hooks";
 
 const App: React.FC = () => {
   const { authToken, user } = useAuth();
   const { mode } = useGlobal();
-
   if (!authToken) {
     return <Login />;
   }
@@ -35,7 +35,7 @@ const App: React.FC = () => {
       case "figma-version":
         return <UtilFigma />;
       case "figma-index":
-        return <p>figma-index</p>;
+        return <UtilFigmaIndex />;
       default:
         return null;
     }

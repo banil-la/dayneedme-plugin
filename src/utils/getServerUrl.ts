@@ -3,5 +3,5 @@
 import { devServerUrl, prodServerUrl } from "../constants";
 
 export const getServerUrl = (): string => {
-  return devServerUrl;
+  return prodServerUrl;
 };

@@ -1,13 +1,14 @@
 // src/main.ts
 
 import { emit, on, showUI } from "@create-figma-plugin/utilities";
-import { ResizeWindowHandler, SetModeHandler, Mode, TokenData } from "./types";
+import { ResizeWindowHandler, Mode, TokenData } from "./types";
 import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
 const MODE_KEY = "CURRENT_MODE";
+const ENV_KEY = "ENV";
 let currentMode: Mode = "history"; // 기본 모드
 // let currentMode: Mode = "string"; // 임시
 
@@ -157,7 +158,224 @@ async function checkFileKey(authToken: string) {
   }
 }
 
+function handleComponentSelection(componentId: string) {
+  try {
+    console.log("[main] Attempting to select component:", componentId);
+    const component = figma.getNodeById(componentId) as SceneNode;
+
+    if (!component) {
+      console.error("[main] Component not found:", componentId);
+      figma.notify("컴포넌트를 찾을 수 없습니다.", { error: true });
+      return;
+    }
+
+    console.log("[main] Found component:", {
+      id: component.id,
+      name: component.name,
+      type: component.type,
+      parent: component.parent?.type,
+    });
+
+    // 컴포넌트가 있는 페이지 찾기
+    let targetPage = component.parent;
+    while (targetPage && targetPage.type !== "PAGE") {
+      targetPage = targetPage.parent;
+    }
+
+    if (targetPage && targetPage.type === "PAGE") {
+      console.log("[main] Switching to page:", targetPage.name);
+      figma.currentPage = targetPage as PageNode;
+    }
+
+    // 컴포넌트 선택
+    figma.currentPage.selection = [component];
+
+    // 컴포넌트가 보이도록 뷰포트 이동
+    console.log("[main] Scrolling to component");
+    figma.viewport.scrollAndZoomIntoView([component]);
+
+    // 선택된 컴포넌트를 강조 표시
+    figma.notify(`"${component.name}" 컴포넌트로 이동했습니다.`, {
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error("[main] Error selecting component:", error);
+    figma.notify("컴포넌트를 찾을 수 없습니다.", { error: true });
+  }
+}
+
+function handleComponentClone(componentId: string) {
+  try {
+    console.log("[main] Attempting to clone component:", componentId);
+    const component = figma.getNodeById(componentId) as ComponentNode;
+
+    if (!component) {
+      console.error("[main] Component not found:", componentId);
+      figma.notify("컴포넌트를 찾을 수 없습니다.", { error: true });
+      return;
+    }
+
+    // 현재 선택된 프레임이나 페이지를 찾기
+    let targetParent: BaseNode = figma.currentPage;
+    const selection = figma.currentPage.selection;
+    if (selection.length > 0) {
+      const selectedNode = selection[0];
+      if (selectedNode.type === "FRAME" || selectedNode.type === "GROUP") {
+        targetParent = selectedNode;
+      }
+    }
+
+    // 컴포넌트 인스턴스 생성
+    const instance = component.createInstance();
+
+    // 현재 뷰포트의 중앙에 위치시키기
+    const center = figma.viewport.center;
+    instance.x = center.x - instance.width / 2;
+    instance.y = center.y - instance.height / 2;
+
+    // 새로 생성된 인스턴스 선택
+    figma.currentPage.selection = [instance];
+
+    figma.notify(`"${component.name}" 컴포넌트가 생성되었습니다.`, {
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error("[main] Error cloning component:", error);
+    figma.notify("컴포넌트 생성에 실패했습니다.", { error: true });
+  }
+}
+
+async function handleGetComponents() {
+  try {
+    console.log("[main] Starting to find components...");
+    console.log("[main] Current page:", figma.currentPage.name);
+
+    // 전체 파일의 컴포넌트 검색
+    const allComponents = figma.root.findAll(
+      (node) => node.type === "COMPONENT"
+    ) as ComponentNode[];
+
+    console.log("[main] Total components found in file:", allComponents.length);
+
+    // 배치 크기 설정
+    const BATCH_SIZE = 50; // 썸네일 생성으로 인해 배치 크기 감소
+    let currentIndex = 0;
+
+    // 배치로 데이터 전송
+    const sendBatch = async () => {
+      const batch = allComponents.slice(
+        currentIndex,
+        currentIndex + BATCH_SIZE
+      );
+      if (batch.length > 0) {
+        console.log(
+          `[main] Processing batch: ${currentIndex} to ${
+            currentIndex + batch.length
+          }`
+        );
+
+        // 각 컴포넌트의 썸네일 생성
+        const batchData = await Promise.all(
+          batch.map(async (component) => {
+            try {
+              const bytes = await component.exportAsync({
+                format: "PNG",
+                constraint: { type: "SCALE", value: 1 },
+                contentsOnly: true,
+              });
+              return {
+                id: component.id,
+                name: component.name,
+                description: component.description || "",
+                type: component.type,
+                thumbnail: bytes,
+              };
+            } catch (error) {
+              console.error(
+                `[main] Error exporting thumbnail for ${component.name}:`,
+                error
+              );
+              return {
+                id: component.id,
+                name: component.name,
+                description: component.description || "",
+                type: component.type,
+                thumbnail: null,
+              };
+            }
+          })
+        );
+
+        const message = {
+          type: "COMPONENTS_BATCH",
+          data: batchData,
+          total: allComponents.length,
+          current: currentIndex + batch.length,
+        };
+        console.log("[main] Sending batch message");
+        figma.ui.postMessage(message);
+
+        currentIndex += BATCH_SIZE;
+        setTimeout(sendBatch, 0);
+      } else {
+        console.log("[main] All batches sent, sending final loaded message");
+        const finalData = await Promise.all(
+          allComponents.map(async (component) => {
+            try {
+              const bytes = await component.exportAsync({
+                format: "PNG",
+                constraint: { type: "SCALE", value: 1 },
+                contentsOnly: true,
+              });
+              return {
+                id: component.id,
+                name: component.name,
+                description: component.description || "",
+                type: component.type,
+                thumbnail: bytes,
+              };
+            } catch (error) {
+              console.error(
+                `[main] Error exporting thumbnail for ${component.name}:`,
+                error
+              );
+              return {
+                id: component.id,
+                name: component.name,
+                description: component.description || "",
+                type: component.type,
+                thumbnail: null,
+              };
+            }
+          })
+        );
+
+        const message = {
+          type: "COMPONENTS_LOADED",
+          data: finalData,
+        };
+        console.log("[main] Sending final message");
+        figma.ui.postMessage(message);
+      }
+    };
+
+    sendBatch();
+  } catch (error) {
+    console.error("[main] Error getting components:", error);
+    const errorMessage = {
+      type: "COMPONENTS_ERROR",
+      error: "컴포넌트를 불러오는데 실패했습니다.",
+    };
+    console.log("[main] Sending error message:", errorMessage);
+    figma.ui.postMessage(errorMessage);
+  }
+}
+
+// library test
+
 export default function () {
+  // library test
+
   // 모드 변경 감지
   on("MODE_CHANGED", (newMode: Mode) => {
     console.log("[main] Mode changed:", newMode);
@@ -222,11 +440,6 @@ export default function () {
 
   on("GET_SELECTED_IMAGES", () => {
     handleImageModeSelection();
-  });
-
-  on<SetModeHandler>("SET_MODE", (mode) => {
-    currentMode = mode;
-    checkSelection();
   });
 
   on("TOKEN_LOADED", checkFileKey);
@@ -379,11 +592,19 @@ export default function () {
   // 모드 저장 핸들러
   on("SAVE_MODE", async (mode: Mode) => {
     try {
-      await figma.clientStorage.setAsync(MODE_KEY, mode);
-      currentMode = mode;
-      emit("MODE_CHANGED", mode);
+      await figma.clientStorage.setAsync(MODE_KEY, mode); // 스토리지에 저장
+      currentMode = mode; // 메모리 업데이트
+      checkSelection(); // 선택된 요소 체크
+      emit("MODE_CHANGED", mode); // UI에 변경 알림
     } catch (error) {
       handleError("MODE_SAVE", error);
+    }
+  });
+  on("SAVE_ENV", async (env: "dev" | "prod") => {
+    try {
+      await figma.clientStorage.setAsync(ENV_KEY, env);
+    } catch (error) {
+      handleError("ENV_SAVE", error);
     }
   });
 
@@ -401,15 +622,27 @@ export default function () {
     }
   });
 
+  on("GET_COMPONENTS", handleGetComponents);
+  on("SELECT_COMPONENT", handleComponentSelection);
+  on("CLONE_COMPONENT", handleComponentClone);
+
   figma.on("selectionchange", checkSelection);
   // 초기화
-  figma.once("run", () => {
-    // console.log("[Plugin] Starting with:", {
-    //   fileName: getCurrentFileName(),
-    //   mode: currentMode,
-    // });
+  figma.once("run", async () => {
+    // 저장된 모드 불러오기
+    try {
+      const savedMode = await figma.clientStorage.getAsync(MODE_KEY);
+      if (savedMode) {
+        currentMode = savedMode;
+        emit("MODE_LOADED", savedMode);
+      }
+    } catch (error) {
+      console.error("Error loading saved mode:", error);
+    }
+
     sendCurrentFileName();
     checkSelection();
+    // library test
   });
 
   showUI({

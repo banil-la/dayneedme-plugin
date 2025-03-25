@@ -1,12 +1,12 @@
 import { h } from "preact";
 import RegisterFileModal from "./RegisterFileModal";
 import SearchFileModal from "./SearchFileModal";
+import { FileKeyInfo } from "../../../types";
 
 interface StatusViewProps {
   isLoading: boolean;
   error: string | null;
-  isFileNameMismatch: boolean;
-  fileKeyInfo: any;
+  fileKeyInfo: FileKeyInfo | null;
   currentFileName: string;
   onRegisterClick: () => void;
   onSearchClick: () => void;
@@ -20,7 +20,6 @@ interface StatusViewProps {
 const StatusView: React.FC<StatusViewProps> = ({
   isLoading,
   error,
-  isFileNameMismatch,
   fileKeyInfo,
   currentFileName,
   onRegisterClick,

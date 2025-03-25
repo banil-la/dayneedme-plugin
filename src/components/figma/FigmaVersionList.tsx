@@ -10,24 +10,10 @@ import FigmaVersionItem from "./FigmaVersionItem";
 
 export default function FigmaVersionList() {
   const { authToken } = useAuth();
-  const { fileKeyInfo, setFileKeyInfo } = useGlobal();
+  const { fileKeyInfo } = useGlobal();
   const [history, setHistory] = useState<FigmaHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data.pluginMessage;
-      if (message?.type === "FILE_KEY_INFO") {
-        setFileKeyInfo(message.info);
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    emit("CHECK_FILE_KEY");
-
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
 
   const fetchHistory = async () => {
     if (!fileKeyInfo?.fileKey) return;
@@ -90,22 +76,7 @@ export default function FigmaVersionList() {
   }
 
   return (
-    <div className="p-4">
-      {/* 파일 정보 헤더 */}
-      {history?.file_info && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold">{history.file_info.name}</h2>
-            <span className="text-sm text-gray-500">
-              마지막 수정: {formatDate(history.file_info.last_modified)}
-            </span>
-          </div>
-          <div className="flex items-center text-sm text-gray-600">
-            <span>편집자: {history.file_info.editor.handle}</span>
-          </div>
-        </div>
-      )}
-
+    <div className="">
       {/* 필터 컨트롤 */}
       <div className="mb-4 flex items-center justify-between">
         <button

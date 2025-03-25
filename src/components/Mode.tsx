@@ -33,11 +33,11 @@ const TABS = [
     icon: <LuImageDown size={`1.5em`} />,
     label: "Extract",
   },
-  {
-    id: "figma-version" as const,
-    icon: <LuHistory size={`1.5em`} />,
-    label: "Version",
-  },
+  // {
+  //   id: "figma-version" as const,
+  //   icon: <LuHistory size={`1.5em`} />,
+  //   label: "Version",
+  // },
   {
     id: "figma-index" as const,
     icon: <LuListCollapse size={`1.5em`} />,
