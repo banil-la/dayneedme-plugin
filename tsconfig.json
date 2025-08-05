@@ -1,8 +1,8 @@
 {
   "extends": "@create-figma-plugin/tsconfig",
   "compilerOptions": {
-    // "typeRoots": ["node_modules/@figma", "node_modules/@types"], // 이 라인이 제거되어야 합니다.
-    "types": ["node", "@figma/plugin-typings"],
+    // "typeRoots": ["node_modules/@figma", "node_modules/@types"],
+    // "types": ["node", "@figma/plugin-typings"],
     "jsx": "react",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

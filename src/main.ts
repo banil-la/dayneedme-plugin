@@ -59,8 +59,9 @@ function handleAccessibilityModeSelection() {
               fill.type === "SOLID" &&
               (fill.opacity === undefined || fill.opacity === 1)
           );
-          if (solidFill) {
-            foregroundColor = getRgbFromFigmaColor(solidFill.color);
+          if (solidFill && solidFill.type === "SOLID") {
+            // solidFill이 SolidPaint 타입임을 확인
+            foregroundColor = getRgbFromFigmaColor(solidFill.color); // <-- solidFill.color로 수정
           }
         }
       }
@@ -662,19 +663,11 @@ export default function () {
   // 모드 저장 핸들러
   on("SAVE_MODE", async (mode: Mode) => {
     try {
-      await figma.clientStorage.setAsync(MODE_KEY, mode); // 스토리지에 저장
-      currentMode = mode; // 메모리 업데이트
-      checkSelection(); // 선택된 요소 체크
-      emit("MODE_CHANGED", mode); // UI에 변경 알림
+      await figma.clientStorage.setAsync(MODE_KEY, mode);
+      currentMode = mode;
+      emit("MODE_CHANGED", mode);
     } catch (error) {
       handleError("MODE_SAVE", error);
-    }
-  });
-  on("SAVE_ENV", async (env: "dev" | "prod") => {
-    try {
-      await figma.clientStorage.setAsync(ENV_KEY, env);
-    } catch (error) {
-      handleError("ENV_SAVE", error);
     }
   });
 
@@ -699,17 +692,6 @@ export default function () {
   figma.on("selectionchange", checkSelection);
   // 초기화
   figma.once("run", async () => {
-    // 저장된 모드 불러오기
-    try {
-      const savedMode = await figma.clientStorage.getAsync(MODE_KEY);
-      if (savedMode) {
-        currentMode = savedMode;
-        emit("MODE_LOADED", savedMode);
-      }
-    } catch (error) {
-      console.error("Error loading saved mode:", error);
-    }
-
     sendCurrentFileName();
     checkSelection();
     // library test
