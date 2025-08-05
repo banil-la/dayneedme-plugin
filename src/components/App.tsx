@@ -13,7 +13,6 @@ import UtilAccessibility from "./accessibility/UtilAccessibility";
 const App: React.FC = () => {
   const { authToken } = useAuth();
   const { mode } = useGlobal();
-
   if (!authToken) {
     return <Login />;
   }
