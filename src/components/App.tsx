@@ -8,14 +8,10 @@ import Login from "./auth/Login";
 import Utils from "./Mode";
 import UtilString from "./strings/UtilString";
 import UtilURL from "./url/UtilURL";
-import UtilImage from "./image/UtilImage";
-import SettingsSelector from "./SettingsSelector";
-import UtilHistory from "./history/UtilHistory";
-import UtilFigma from "./figma/UtilFIgma";
-// import SettingsSelector from "./SettingsSelector";
+import UtilAccessibility from "./accessibility/UtilAccessibility";
 
 const App: React.FC = () => {
-  const { authToken, user } = useAuth();
+  const { authToken } = useAuth();
   const { mode } = useGlobal();
 
   if (!authToken) {
@@ -24,18 +20,12 @@ const App: React.FC = () => {
 
   const renderModeContent = () => {
     switch (mode) {
-      case "history":
-        return <UtilHistory />;
       case "string":
         return <UtilString />;
       case "url":
         return <UtilURL />;
-      case "image":
-        return <UtilImage />;
-      case "figma-version":
-        return <UtilFigma />;
-      case "figma-index":
-        return <p>figma-index</p>;
+      case "accessibility":
+        return <UtilAccessibility />;
       default:
         return null;
     }
@@ -45,7 +35,7 @@ const App: React.FC = () => {
     <div className="flex flex-col w-full h-full">
       <div className="shrink-0">
         <Profile />
-        <SettingsSelector />
+        {/* <SettingsSelector /> */}
       </div>
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <Utils />

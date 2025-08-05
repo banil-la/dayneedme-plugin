@@ -4,12 +4,12 @@ import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { ResizeWindowHandler, SetModeHandler, Mode, TokenData } from "./types";
 import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
+import { getRgbFromFigmaColor, findEffectiveBackgroundColor } from "./helper";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
 const MODE_KEY = "CURRENT_MODE";
-let currentMode: Mode = "history"; // 기본 모드
-// let currentMode: Mode = "string"; // 임시
+let currentMode: Mode = "accessibility"; // 기본 모드
 
 // 유틸리티 함수들
 const getCurrentFileName = () => figma.root.name;
@@ -32,6 +32,74 @@ const handleError = (context: string, error: unknown) => {
 function isValidToken(token: any): token is string {
   return typeof token === "string" && token.length > 0;
 }
+
+/**
+ * Figma 선택 변경 시 접근성 관련 정보를 추출하여 UI로 전송하는 메인 함수 (개선됨)
+ */
+function handleAccessibilityModeSelection() {
+  try {
+    const selection = figma.currentPage.selection;
+
+    if (selection.length === 1) {
+      const node = selection[0];
+
+      let foregroundColor: { r: number; g: number; b: number } | null = null;
+      let backgroundColor: { r: number; g: number; b: number } | null = null;
+
+      // 텍스트 노드인 경우 전경색 추출
+      if (node.type === "TEXT") {
+        if (
+          "fills" in node &&
+          node.fills !== figma.mixed &&
+          node.fills.length > 0
+        ) {
+          // 텍스트의 첫 번째 유효한 SOLID 채우기를 전경색으로 간주
+          const solidFill = node.fills.find(
+            (fill) =>
+              fill.type === "SOLID" &&
+              (fill.opacity === undefined || fill.opacity === 1)
+          );
+          if (solidFill) {
+            foregroundColor = getRgbFromFigmaColor(solidFill.color);
+          }
+        }
+      }
+
+      // 유효한 배경색 탐색 (재귀 헬퍼 함수 사용)
+      backgroundColor = findEffectiveBackgroundColor(node);
+
+      // UI로 데이터 전송
+      figma.ui.postMessage({
+        type: "ACCESSIBILITY_SELECTION_CHANGED",
+        data: {
+          nodeId: node.id,
+          nodeName: node.name,
+          nodeType: node.type,
+          foregroundColor,
+          backgroundColor,
+          hasValidSelection: true,
+        },
+      });
+    } else {
+      // 선택된 노드가 없거나 여러 개인 경우
+      figma.ui.postMessage({
+        type: "ACCESSIBILITY_SELECTION_CHANGED",
+        data: {
+          hasValidSelection: false,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("[main] Error in accessibility mode selection:", error);
+    figma.ui.postMessage({
+      type: "ACCESSIBILITY_SELECTION_CHANGED",
+      data: {
+        hasValidSelection: false,
+      },
+    });
+  }
+}
+// --- 접근성 검사 관련 헬퍼 함수 끝 ---
 
 function handleStringModeSelection() {
   try {
@@ -123,6 +191,9 @@ function checkSelection() {
     handleUrlModeSelection();
   } else if (currentMode === "image") {
     handleImageModeSelection();
+  } else if (currentMode === "accessibility") {
+    // 접근성 모드 추가
+    handleAccessibilityModeSelection();
   }
 }
 

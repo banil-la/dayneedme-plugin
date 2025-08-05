@@ -2,21 +2,18 @@ import { h } from "preact";
 import { useGlobal } from "../context/GlobalContext";
 import { Mode } from "../types";
 import classNames from "classnames";
-import {
-  LuLandmark,
-  LuLink2,
-  LuBookA,
-  LuImageDown,
-  LuFigma,
-  LuHistory,
-  LuListCollapse,
-} from "react-icons/lu";
+import { LuLink2, LuBookA, LuAccessibility } from "react-icons/lu";
 
 const TABS = [
+  // {
+  //   id: "history" as const,
+  //   icon: <LuLandmark size={`1.5em`} />,
+  //   label: "History",
+  // },
   {
-    id: "history" as const,
-    icon: <LuLandmark size={`1.5em`} />,
-    label: "History",
+    id: "accessibility" as const,
+    icon: <LuAccessibility size={`1.5em`} />,
+    label: "Accessibility",
   },
   {
     id: "string" as const,
@@ -28,21 +25,21 @@ const TABS = [
     icon: <LuLink2 size={`1.5em`} />,
     label: "Share",
   },
-  {
-    id: "image" as const,
-    icon: <LuImageDown size={`1.5em`} />,
-    label: "Extract",
-  },
-  {
-    id: "figma-version" as const,
-    icon: <LuHistory size={`1.5em`} />,
-    label: "Version",
-  },
-  {
-    id: "figma-index" as const,
-    icon: <LuListCollapse size={`1.5em`} />,
-    label: "Index",
-  },
+  // {
+  //   id: "image" as const,
+  //   icon: <LuImageDown size={`1.5em`} />,
+  //   label: "Extract",
+  // },
+  // {
+  //   id: "figma-version" as const,
+  //   icon: <LuHistory size={`1.5em`} />,
+  //   label: "Version",
+  // },
+  // {
+  //   id: "figma-index" as const,
+  //   icon: <LuListCollapse size={`1.5em`} />,
+  //   label: "Index",
+  // },
 ];
 
 const UtilTab = ({ utilMode }: { utilMode: Mode }) => {
@@ -69,7 +66,7 @@ const UtilTab = ({ utilMode }: { utilMode: Mode }) => {
 
 const Utils: React.FC = () => {
   return (
-    <div role="tablist" className="flex flex-col border-r h-full">
+    <div role="tablist" className="flex flex-col h-full">
       {TABS.map((tab) => (
         <UtilTab key={tab.id} utilMode={tab.id} />
       ))}

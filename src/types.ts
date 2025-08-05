@@ -62,7 +62,8 @@ export type Mode =
   | "url"
   | "image"
   | "figma-version"
-  | "figma-index";
+  | "figma-index"
+  | "accessibility";
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 
