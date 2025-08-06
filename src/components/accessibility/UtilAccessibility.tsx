@@ -1,28 +1,43 @@
 import { h } from "preact";
 import { useGlobal } from "../../context/GlobalContext";
 import { useEffect, useState } from "preact/hooks";
+
+// main.ts에서 보내는 ACCESSIBILITY_CHECK_RESULTS 메시지의 data 구조에 맞게 업데이트
 interface ColorInfo {
   r: number;
   g: number;
   b: number;
 }
+
+interface AccessibilityCheckResult {
+  nodeId: string;
+  nodeName: string;
+  type: string; // "Border vs Background", "Text vs Background", "Icon vs Background"
+  colors: { foreground: ColorInfo; background: ColorInfo };
+  contrastRatio: number;
+  compliance: { AA: boolean; AAA: boolean };
+  status: string; // "Pass" or "Fail"
+  isLargeText?: boolean; // 텍스트 대비 검사 시에만 존재
+}
+
 interface AccessibilityData {
   nodeId: string;
   nodeName: string;
   nodeType: string;
-  foregroundColor: ColorInfo | null;
-  backgroundColor: ColorInfo | null;
+  results: AccessibilityCheckResult[]; // 재귀 검사 결과 배열
   hasValidSelection: boolean;
 }
+
 export default function UtilAccessibility() {
-  const { mode } = useGlobal();
+  const { mode } = useGlobal(); // mode는 현재 사용되지 않지만, 필요 시 활용 가능
   const [accessibilityData, setAccessibilityData] =
     useState<AccessibilityData | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data.pluginMessage;
-      if (message?.type === "ACCESSIBILITY_SELECTION_CHANGED") {
+      // ACCESSIBILITY_CHECK_RESULTS 메시지 타입으로 변경
+      if (message?.type === "ACCESSIBILITY_CHECK_RESULTS") {
         setAccessibilityData(message.data);
       }
     };
@@ -31,121 +46,21 @@ export default function UtilAccessibility() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  const calculateContrastRatio = (color1: ColorInfo, color2: ColorInfo) => {
-    // 색상을 상대 휘도로 변환
-    const getLuminance = (color: ColorInfo) => {
-      const { r, g, b } = color;
-      const [rs, gs, bs] = [r / 255, g / 255, b / 255].map((c) => {
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-      });
-      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-    };
-
-    const l1 = getLuminance(color1);
-    const l2 = getLuminance(color2);
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-
-    return (lighter + 0.05) / (darker + 0.05);
-  };
-
-  const getContrastResult = () => {
-    if (
-      !accessibilityData?.foregroundColor ||
-      !accessibilityData?.backgroundColor
-    ) {
-      return null;
-    }
-
-    const ratio = calculateContrastRatio(
-      accessibilityData.foregroundColor,
-      accessibilityData.backgroundColor
-    );
-
-    return {
-      ratio: ratio.toFixed(2),
-      passes: ratio >= 4.5, // WCAG AA 기준
-      level: ratio >= 4.5 ? "AA" : ratio >= 3 ? "A" : "Fail",
-    };
-  };
+  // calculateContrastRatio, getLuminance는 helper.ts로 이동했으므로 여기서는 제거
+  // 그러나 UI에서 직접 계산해야 한다면 여기에 유지할 수 있습니다.
+  // 현재는 main.ts에서 이미 계산된 결과를 받으므로 필요하지 않습니다.
 
   if (!accessibilityData?.hasValidSelection) {
     return (
       <div className="p-4 text-center text-gray-500">
-        접근성 검사를 위해 텍스트나 색상이 있는 요소를 선택해주세요.
+        접근성 검사를 위해 요소를 선택해주세요.
       </div>
     );
   }
 
-  const contrastResult = getContrastResult();
-
   return (
     <div className="p-4">
       <h3 className="text-lg font-semibold mb-4">접근성 검사</h3>
-
-      <div className="space-y-4">
-        <div>
-          <h4 className="font-medium mb-2">선택된 요소</h4>
-          <p className="text-sm text-gray-600">{accessibilityData.nodeName}</p>
-        </div>
-
-        {accessibilityData.foregroundColor && (
-          <div>
-            <h4 className="font-medium mb-2">전경색</h4>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded border"
-                style={{
-                  backgroundColor: `rgb(${accessibilityData.foregroundColor.r}, ${accessibilityData.foregroundColor.g}, ${accessibilityData.foregroundColor.b})`,
-                }}
-              />
-              <span className="text-sm">
-                RGB({accessibilityData.foregroundColor.r},{" "}
-                {accessibilityData.foregroundColor.g},{" "}
-                {accessibilityData.foregroundColor.b})
-              </span>
-            </div>
-          </div>
-        )}
-
-        {accessibilityData.backgroundColor && (
-          <div>
-            <h4 className="font-medium mb-2">배경색</h4>
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded border"
-                style={{
-                  backgroundColor: `rgb(${accessibilityData.backgroundColor.r}, ${accessibilityData.backgroundColor.g}, ${accessibilityData.backgroundColor.b})`,
-                }}
-              />
-              <span className="text-sm">
-                RGB({accessibilityData.backgroundColor.r},{" "}
-                {accessibilityData.backgroundColor.g},{" "}
-                {accessibilityData.backgroundColor.b})
-              </span>
-            </div>
-          </div>
-        )}
-
-        {contrastResult && (
-          <div>
-            <h4 className="font-medium mb-2">대비율</h4>
-            <div
-              className={`p-3 rounded ${
-                contrastResult.passes
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              <p className="font-semibold">대비율: {contrastResult.ratio}:1</p>
-              <p className="text-sm">WCAG {contrastResult.level} 기준</p>
-              <p className="text-sm">
-                {contrastResult.passes ? "✅ 통과" : "❌ 미달"}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

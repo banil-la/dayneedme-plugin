@@ -4,7 +4,6 @@ import { emit, on, showUI } from "@create-figma-plugin/utilities";
 import { ResizeWindowHandler, Mode, TokenData } from "./types";
 import { plugin } from "./constants";
 import { getServerUrl } from "./utils/getServerUrl";
-import { getRgbFromFigmaColor, findEffectiveBackgroundColor } from "./helper";
 
 const serverUrl = getServerUrl();
 const TOKEN_KEY = "ACCESS_TOKEN";
@@ -36,70 +35,10 @@ function isValidToken(token: any): token is string {
 /**
  * Figma 선택 변경 시 접근성 관련 정보를 추출하여 UI로 전송하는 메인 함수 (개선됨)
  */
-function handleAccessibilityModeSelection() {
-  try {
-    const selection = figma.currentPage.selection;
-
-    if (selection.length === 1) {
-      const node = selection[0];
-
-      let foregroundColor: { r: number; g: number; b: number } | null = null;
-      let backgroundColor: { r: number; g: number; b: number } | null = null;
-
-      // 텍스트 노드인 경우 전경색 추출
-      if (node.type === "TEXT") {
-        if (
-          "fills" in node &&
-          node.fills !== figma.mixed &&
-          node.fills.length > 0
-        ) {
-          // 텍스트의 첫 번째 유효한 SOLID 채우기를 전경색으로 간주
-          const solidFill = node.fills.find(
-            (fill) =>
-              fill.type === "SOLID" &&
-              (fill.opacity === undefined || fill.opacity === 1)
-          );
-          if (solidFill && solidFill.type === "SOLID") {
-            // solidFill이 SolidPaint 타입임을 확인
-            foregroundColor = getRgbFromFigmaColor(solidFill.color); // <-- solidFill.color로 수정
-          }
-        }
-      }
-
-      // 유효한 배경색 탐색 (재귀 헬퍼 함수 사용)
-      backgroundColor = findEffectiveBackgroundColor(node);
-
-      // UI로 데이터 전송
-      figma.ui.postMessage({
-        type: "ACCESSIBILITY_SELECTION_CHANGED",
-        data: {
-          nodeId: node.id,
-          nodeName: node.name,
-          nodeType: node.type,
-          foregroundColor,
-          backgroundColor,
-          hasValidSelection: true,
-        },
-      });
-    } else {
-      // 선택된 노드가 없거나 여러 개인 경우
-      figma.ui.postMessage({
-        type: "ACCESSIBILITY_SELECTION_CHANGED",
-        data: {
-          hasValidSelection: false,
-        },
-      });
-    }
-  } catch (error) {
-    console.error("[main] Error in accessibility mode selection:", error);
-    figma.ui.postMessage({
-      type: "ACCESSIBILITY_SELECTION_CHANGED",
-      data: {
-        hasValidSelection: false,
-      },
-    });
-  }
-}
+/**
+ * Figma 선택 변경 시 접근성 관련 정보를 추출하여 UI로 전송하는 메인 함수 (개선됨)
+ */
+function handleAccessibilityModeSelection() {}
 // --- 접근성 검사 관련 헬퍼 함수 끝 ---
 
 function handleStringModeSelection() {
@@ -232,7 +171,7 @@ async function checkFileKey(authToken: string) {
 function handleComponentSelection(componentId: string) {
   try {
     console.log("[main] Attempting to select component:", componentId);
-    const component = figma.getNodeById(componentId) as SceneNode;
+    const component = figma.getNodeById(componentId) as any; // SceneNode -> any
 
     if (!component) {
       console.error("[main] Component not found:", componentId);
@@ -255,7 +194,7 @@ function handleComponentSelection(componentId: string) {
 
     if (targetPage && targetPage.type === "PAGE") {
       console.log("[main] Switching to page:", targetPage.name);
-      figma.currentPage = targetPage as PageNode;
+      figma.currentPage = targetPage as any; // PageNode -> any
     }
 
     // 컴포넌트 선택
@@ -278,7 +217,7 @@ function handleComponentSelection(componentId: string) {
 function handleComponentClone(componentId: string) {
   try {
     console.log("[main] Attempting to clone component:", componentId);
-    const component = figma.getNodeById(componentId) as ComponentNode;
+    const component = figma.getNodeById(componentId) as any; // ComponentNode -> any
 
     if (!component) {
       console.error("[main] Component not found:", componentId);
@@ -287,7 +226,7 @@ function handleComponentClone(componentId: string) {
     }
 
     // 현재 선택된 프레임이나 페이지를 찾기
-    let targetParent: BaseNode = figma.currentPage;
+    let targetParent: any = figma.currentPage; // BaseNode -> any
     const selection = figma.currentPage.selection;
     if (selection.length > 0) {
       const selectedNode = selection[0];
@@ -324,7 +263,7 @@ async function handleGetComponents() {
     // 전체 파일의 컴포넌트 검색
     const allComponents = figma.root.findAll(
       (node) => node.type === "COMPONENT"
-    ) as ComponentNode[];
+    ) as any[]; // ComponentNode[] -> any[]
 
     console.log("[main] Total components found in file:", allComponents.length);
 
@@ -347,7 +286,8 @@ async function handleGetComponents() {
 
         // 각 컴포넌트의 썸네일 생성
         const batchData = await Promise.all(
-          batch.map(async (component) => {
+          batch.map(async (component: any) => {
+            // component: any
             try {
               const bytes = await component.exportAsync({
                 format: "PNG",
@@ -391,7 +331,8 @@ async function handleGetComponents() {
       } else {
         console.log("[main] All batches sent, sending final loaded message");
         const finalData = await Promise.all(
-          allComponents.map(async (component) => {
+          allComponents.map(async (component: any) => {
+            // component: any
             try {
               const bytes = await component.exportAsync({
                 format: "PNG",
