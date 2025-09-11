@@ -71,12 +71,6 @@ export default function UtilInspector() {
   // 이름 변경 저장
   const saveNameChange = (nodeId: string) => {
     if (editingName.trim() && editingName !== "") {
-      console.log("[UtilInspector] Renaming node:", nodeId, "to:", editingName);
-      console.log("[UtilInspector] Current analysis state:", analysis);
-      console.log(
-        "[UtilInspector] Current expanded nodes:",
-        Array.from(expandedNodes)
-      );
       emit("RENAME_NODE", { nodeId, newName: editingName.trim() });
     }
     cancelEditing();
@@ -91,67 +85,60 @@ export default function UtilInspector() {
     }
   };
 
+  // 3depth까지 자동으로 펼치는 함수
+  const expandNodesToDepth = (
+    node: any,
+    depth: number = 0,
+    maxDepth: number = 3
+  ): Set<string> => {
+    const expandedSet = new Set<string>();
+
+    if (depth < maxDepth && node.children && node.children.length > 0) {
+      expandedSet.add(node.id);
+
+      node.children.forEach((child: any) => {
+        const childExpanded = expandNodesToDepth(child, depth + 1, maxDepth);
+        childExpanded.forEach((id) => expandedSet.add(id));
+      });
+    }
+
+    return expandedSet;
+  };
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data.pluginMessage;
       if (!message || typeof message !== "object") return;
 
       if (message.type === "COMPONENT_SELECTION_CHANGED") {
-        console.log(
-          "[UtilInspector] Component selection changed:",
-          message.data
-        );
         setSelectedComponent(message.data);
         setAnalysis(null); // 선택이 바뀌면 분석 결과 초기화
 
         // 컴포넌트가 선택되면 자동으로 분석 시작
         if (message.data) {
-          console.log(
-            "[UtilInspector] Auto-starting analysis for selected component"
-          );
           setAnalyzing(true);
           emit("ANALYZE_COMPONENT", message.data.id);
         }
       } else if (message.type === "COMPONENT_ANALYSIS_RESULT") {
-        console.log(
-          "[UtilInspector] Received component analysis result:",
-          message.data
-        );
-        console.log("[UtilInspector] Analysis summary:", {
-          componentName: message.data.component.name,
-          totalNodes: message.data.totalNodes,
-          nodeTypes: message.data.nodeTypes,
-        });
         setAnalysis(message.data);
         setAnalyzing(false);
+
+        // 분석 결과 로드 시 3depth까지 자동으로 펼치기
+        if (message.data && message.data.structure) {
+          const autoExpandedNodes = expandNodesToDepth(message.data.structure);
+          setExpandedNodes(autoExpandedNodes);
+        }
       } else if (message.type === "COMPONENT_ANALYSIS_ERROR") {
-        console.error(
-          "[UtilInspector] Error analyzing component:",
-          message.error
-        );
         setAnalyzing(false);
       } else if (message.type === "RENAME_NODE_SUCCESS") {
-        console.log("[UtilInspector] Node renamed successfully:", message.data);
         // 로컬 상태에서 해당 노드의 이름만 업데이트
         const currentAnalysis = analysisRef.current;
         if (currentAnalysis) {
-          console.log("[UtilInspector] Updating local state for renamed node");
-          console.log("[UtilInspector] Target node ID:", message.data.nodeId);
-          console.log("[UtilInspector] New name:", message.data.newName);
           const updateNodeName = (node: any): any => {
-            console.log(
-              `[UtilInspector] Checking node: ${node.id} (${node.name})`
-            );
             if (node.id === message.data.nodeId) {
-              console.log(
-                `[UtilInspector] ✅ Found target node! Updating: "${node.name}" → "${message.data.newName}"`
-              );
               return { ...node, name: message.data.newName };
             }
             if (node.children && node.children.length > 0) {
-              console.log(
-                `[UtilInspector] Checking ${node.children.length} children of node: ${node.name}`
-              );
               return {
                 ...node,
                 children: node.children.map(updateNodeName),
@@ -160,26 +147,14 @@ export default function UtilInspector() {
             return node;
           };
 
-          console.log("[UtilInspector] Starting recursive update...");
           const updatedAnalysis = {
             ...currentAnalysis,
             structure: updateNodeName(currentAnalysis.structure),
           };
           setAnalysis(updatedAnalysis);
-          console.log("[UtilInspector] ✅ Local state updated successfully");
-        } else {
-          console.log(
-            "[UtilInspector] ❌ No analysis state found, cannot update"
-          );
         }
       } else if (message.type === "RENAME_NODE_ERROR") {
-        console.error("[UtilInspector] Error renaming node:", message.error);
         cancelEditing();
-      } else {
-        console.log(
-          "[UtilInspector] Received unhandled message:",
-          message.type
-        );
       }
     };
 
@@ -192,18 +167,9 @@ export default function UtilInspector() {
 
   if (!selectedComponent) {
     return (
-      <div style={{ padding: "16px" }}>
-        <h3>컴포넌트 검사기</h3>
-        <div
-          style={{
-            padding: "16px",
-            backgroundColor: "#f8f9fa",
-            border: "1px solid #dee2e6",
-            borderRadius: "4px",
-            textAlign: "center",
-            color: "#666",
-          }}
-        >
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded text-center text-gray-600">
           <p>검사를 위한 컴포넌트를 선택해 주세요.</p>
         </div>
       </div>
@@ -211,28 +177,13 @@ export default function UtilInspector() {
   }
 
   return (
-    <div style={{ padding: "16px" }}>
-      <h3>컴포넌트 검사기</h3>
+    <div className="p-4">
+      <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
 
-      {/* <ComponentInfoDisplay
+      <ComponentInfoDisplay
         component={selectedComponent}
         analyzing={analyzing}
-      /> */}
-
-      {/* <div
-        style={{
-          padding: "12px",
-          backgroundColor: "#e3f2fd",
-          border: "1px solid #bbdefb",
-          borderRadius: "4px",
-          fontSize: "14px",
-        }}
-      >
-        <strong>컴포넌트가 선택되었습니다!</strong>
-        <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#666" }}>
-          선택된 컴포넌트의 기본 정보가 위에 표시됩니다.
-        </p>
-      </div> */}
+      />
 
       {analysis && (
         <AnalysisResult

@@ -1,4 +1,31 @@
 import { h } from "preact";
+import {
+  LuDiamond,
+  LuSquare,
+  LuCircle,
+  LuType,
+  LuImage,
+  LuLayers,
+  LuFrame,
+} from "react-icons/lu";
+
+// 노드 타입별 아이콘 매핑 함수
+const getNodeIcon = (nodeType: string) => {
+  const iconMap: Record<string, any> = {
+    INSTANCE: LuDiamond,
+    FRAME: LuFrame,
+    GROUP: LuLayers,
+    RECTANGLE: LuSquare,
+    ELLIPSE: LuCircle,
+    TEXT: LuType,
+    IMAGE: LuImage,
+  };
+
+  const IconComponent = iconMap[nodeType];
+  return IconComponent ? (
+    <IconComponent className="w-3 h-3 text-blue-600" />
+  ) : null;
+};
 
 interface NodeStructureProps {
   node: any;
@@ -34,54 +61,31 @@ export default function NodeStructure({
   const canToggle = hasChildren && !isRoot;
 
   return (
-    <div key={node.id} style={{ marginBottom: "2px" }}>
+    <div key={node.id} className="mb-0.5">
       <div
-        style={{
-          padding: "4px 8px",
-          backgroundColor: depth === 0 ? "#f0f0f0" : "#f8f8f8",
-          border: "1px solid #ddd",
-          borderRadius: "4px",
-          marginLeft: `${depth * 16}px`,
-          fontSize: "12px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
+        className={`px-2 py-1 border border-gray-300 rounded text-xs flex items-center gap-2 ${
+          depth === 0 ? "bg-gray-100" : "bg-gray-50"
+        }`}
+        style={{ marginLeft: `${depth * 16}px` }}
       >
         {/* 토글 아이콘 */}
         {canToggle && (
           <span
-            style={{
-              fontSize: "10px",
-              color: "#666",
-              minWidth: "12px",
-              textAlign: "center",
-              cursor: "pointer",
-              padding: "2px",
-              borderRadius: "2px",
-              transition: "background-color 0.2s",
-            }}
+            className="text-xs text-gray-600 w-3 text-center cursor-pointer p-0.5 rounded transition-colors hover:bg-gray-200"
             onClick={(e) => {
               e.stopPropagation();
               onToggleNode(node.id);
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#e0e0e0";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
             }}
             title="클릭하여 펼치기/접기"
           >
             {isExpanded ? "▼" : "▶"}
           </span>
         )}
-        {!canToggle && <span style={{ minWidth: "12px" }}></span>}
 
         {/* 노드 정보 */}
-        <div style={{ flex: 1 }}>
+        <div className="flex-1">
           {editingNodeId === node.id ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={editingName}
@@ -89,58 +93,46 @@ export default function NodeStructure({
                   onSetEditingName((e.target as HTMLInputElement).value)
                 }
                 onKeyDown={(e) => onHandleKeyDown(e, node.id)}
-                onBlur={() => {
-                  // onKeyDown에서 Enter 처리하므로 onBlur에서는 처리하지 않음
-                }}
-                style={{
-                  padding: "2px 6px",
-                  border: "1px solid #007AFF",
-                  borderRadius: "3px",
-                  fontSize: "12px",
-                  fontWeight: "bold",
-                  outline: "none",
-                }}
+                onBlur={() => {}}
+                className="px-1.5 py-0.5 border border-blue-500 rounded text-xs font-bold outline-none"
               />
-              <span style={{ fontSize: "10px", color: "#666" }}>
-                ({node.type})
-              </span>
+              <span className="text-xs text-gray-600">({node.type})</span>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <strong
-                style={{
-                  cursor: "pointer",
-                  padding: "2px 4px",
-                  borderRadius: "3px",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#f0f0f0";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-                onClick={() => onStartEditing(node.id, node.name)}
-                title="클릭하여 이름 변경"
-              >
-                {node.name}
-              </strong>
-              <span style={{ fontSize: "10px", color: "#666" }}>
-                ({node.type})
-              </span>
-              {node.width && node.height && (
-                <span style={{ color: "#666", fontSize: "10px" }}>
-                  {Math.round(node.width)}×{Math.round(node.height)}
-                </span>
-              )}
+            <div className="flex items-center gap-2">
+              {getNodeIcon(node.type)}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <strong
+                    className={`px-1 py-0.5 rounded transition-colors ${
+                      node.type === "INSTANCE"
+                        ? "cursor-not-allowed text-gray-500"
+                        : "cursor-pointer hover:bg-gray-200"
+                    }`}
+                    onClick={() => {
+                      if (node.type !== "INSTANCE") {
+                        onStartEditing(node.id, node.name);
+                      }
+                    }}
+                    title={
+                      node.type === "INSTANCE"
+                        ? "인스턴스는 이름을 변경할 수 없습니다"
+                        : "클릭하여 이름 변경"
+                    }
+                  >
+                    {node.name}
+                  </strong>
+                  {node.width && node.height && (
+                    <span className="text-gray-600 text-xs">
+                      {Math.round(node.width)}×{Math.round(node.height)}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           )}
           {node.type === "TEXT" && node.text && (
-            <div
-              style={{ color: "#007AFF", marginTop: "4px", fontSize: "11px" }}
-            >
-              "{node.text}"
-            </div>
+            <div className="text-blue-600 mt-1 text-xs">"{node.text}"</div>
           )}
         </div>
       </div>

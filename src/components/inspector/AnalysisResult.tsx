@@ -34,38 +34,19 @@ export default function AnalysisResult({
   onHandleKeyDown,
 }: AnalysisResultProps) {
   return (
-    <div style={{ marginTop: "16px" }}>
-      <div
-        style={{
-          padding: "12px",
-          backgroundColor: "#f8f9fa",
-          border: "1px solid #dee2e6",
-          borderRadius: "4px",
-        }}
-      >
-        <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px" }}>
+    <div className="mt-4">
+      <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+        <div className="text-xs text-gray-600 mb-3">
           총 노드: {analysis.totalNodes}개
         </div>
 
-        <div style={{ marginBottom: "12px" }}>
-          <strong>노드 타입 통계:</strong>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "4px",
-              marginTop: "4px",
-            }}
-          >
+        <div className="mb-3">
+          <strong className="text-sm font-semibold">노드 타입 통계:</strong>
+          <div className="flex flex-wrap gap-1 mt-1">
             {Object.entries(analysis.nodeTypes).map(([type, count]) => (
               <span
                 key={type}
-                style={{
-                  padding: "2px 6px",
-                  backgroundColor: "#e9ecef",
-                  borderRadius: "12px",
-                  fontSize: "11px",
-                }}
+                className="px-2 py-1 bg-gray-200 rounded-full text-xs"
               >
                 {type}: {count}
               </span>
@@ -74,14 +55,8 @@ export default function AnalysisResult({
         </div>
 
         <div>
-          <strong>구조:</strong>
-          <div
-            style={{
-              marginTop: "8px",
-              maxHeight: "300px",
-              overflow: "auto",
-            }}
-          >
+          <strong className="text-sm font-semibold">구조:</strong>
+          <div className="mt-2 max-h-72 overflow-auto">
             <NodeStructure
               node={analysis.structure}
               depth={0}
