@@ -15,6 +15,7 @@ import {
   createComponentInstance,
   fetchComponentsList,
   handleComponentAnalysis,
+  handleRenameNode,
 } from "./handlers/componentHandlers";
 import {
   handleExportImages,
@@ -183,6 +184,13 @@ export default function () {
     );
     handleComponentAnalysis(componentId);
   });
+  on(
+    "RENAME_NODE",
+    ({ nodeId, newName }: { nodeId: string; newName: string }) => {
+      console.log("[main] RENAME_NODE event received:", { nodeId, newName });
+      handleRenameNode(nodeId, newName);
+    }
+  );
   on("CLONE_COMPONENT", createComponentInstance);
   on("CHECK_SELECTION", () => checkSelection(currentMode));
 

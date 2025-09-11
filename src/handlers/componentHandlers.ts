@@ -214,6 +214,56 @@ export async function fetchComponentsList() {
 }
 
 // 컴포넌트 구조 분석 함수
+// 노드 이름 변경 함수
+export function handleRenameNode(nodeId: string, newName: string) {
+  try {
+    console.log("[RENAME] Starting node rename:", { nodeId, newName });
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[RENAME] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "RENAME_NODE_ERROR",
+        error: "노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    console.log("[RENAME] Found node:", {
+      id: node.id,
+      name: node.name,
+      type: node.type,
+    });
+
+    // 노드 이름 변경
+    const oldName = node.name;
+    node.name = newName;
+
+    console.log("[RENAME] Node renamed successfully:", {
+      id: node.id,
+      oldName,
+      newName,
+    });
+
+    // 성공 메시지 전송
+    figma.ui.postMessage({
+      type: "RENAME_NODE_SUCCESS",
+      data: { nodeId, oldName, newName },
+    });
+
+    // Figma 알림
+    figma.notify(`"${oldName}" → "${newName}" 이름이 변경되었습니다.`, {
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error("[RENAME] Error renaming node:", error);
+    figma.ui.postMessage({
+      type: "RENAME_NODE_ERROR",
+      error: "노드 이름 변경에 실패했습니다.",
+    });
+  }
+}
+
 export function handleComponentAnalysis(componentId: string) {
   try {
     console.log("[ANALYZE] Starting component analysis for ID:", componentId);

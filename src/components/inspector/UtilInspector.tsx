@@ -1,7 +1,9 @@
 import { h } from "preact";
 import { useGlobal } from "../../context/GlobalContext";
 import { emit } from "@create-figma-plugin/utilities";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useRef, useCallback } from "preact/hooks";
+import ComponentInfoDisplay from "./ComponentInfo";
+import AnalysisResult from "./AnalysisResult";
 
 interface ComponentInfo {
   id: string;
@@ -29,40 +31,64 @@ export default function UtilInspector() {
     useState<ComponentInfo | null>(null);
   const [analysis, setAnalysis] = useState<ComponentAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>("");
 
-  const renderNodeStructure = (node: any, depth: number = 0) => {
-    return (
-      <div
-        key={node.id}
-        style={{ marginLeft: `${depth * 16}px`, fontSize: "12px" }}
-      >
-        <div
-          style={{
-            padding: "4px 8px",
-            backgroundColor: depth === 0 ? "#f0f0f0" : "#f8f8f8",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            margin: "2px 0",
-          }}
-        >
-          <strong>{node.name}</strong> ({node.type})
-          {node.width && node.height && (
-            <span style={{ color: "#666", marginLeft: "8px" }}>
-              {Math.round(node.width)}×{Math.round(node.height)}
-            </span>
-          )}
-          {node.type === "TEXT" && node.text && (
-            <div style={{ color: "#007AFF", marginTop: "4px" }}>
-              "{node.text}"
-            </div>
-          )}
-        </div>
-        {node.children &&
-          node.children.map((child: any) =>
-            renderNodeStructure(child, depth + 1)
-          )}
-      </div>
-    );
+  // 최신 상태를 참조하기 위한 ref
+  const analysisRef = useRef<ComponentAnalysis | null>(null);
+  const selectedComponentRef = useRef<ComponentInfo | null>(null);
+
+  // ref 업데이트
+  analysisRef.current = analysis;
+  selectedComponentRef.current = selectedComponent;
+
+  // 노드 접힘/펼치기 토글 함수
+  const toggleNode = (nodeId: string) => {
+    setExpandedNodes((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId);
+      } else {
+        newSet.add(nodeId);
+      }
+      return newSet;
+    });
+  };
+
+  // 이름 편집 시작
+  const startEditing = (nodeId: string, currentName: string) => {
+    setEditingNodeId(nodeId);
+    setEditingName(currentName);
+  };
+
+  // 이름 편집 취소
+  const cancelEditing = () => {
+    setEditingNodeId(null);
+    setEditingName("");
+  };
+
+  // 이름 변경 저장
+  const saveNameChange = (nodeId: string) => {
+    if (editingName.trim() && editingName !== "") {
+      console.log("[UtilInspector] Renaming node:", nodeId, "to:", editingName);
+      console.log("[UtilInspector] Current analysis state:", analysis);
+      console.log(
+        "[UtilInspector] Current expanded nodes:",
+        Array.from(expandedNodes)
+      );
+      emit("RENAME_NODE", { nodeId, newName: editingName.trim() });
+    }
+    cancelEditing();
+  };
+
+  // Enter 키로 저장, Escape 키로 취소
+  const handleKeyDown = (e: KeyboardEvent, nodeId: string) => {
+    if (e.key === "Enter") {
+      saveNameChange(nodeId);
+    } else if (e.key === "Escape") {
+      cancelEditing();
+    }
   };
 
   useEffect(() => {
@@ -104,6 +130,51 @@ export default function UtilInspector() {
           message.error
         );
         setAnalyzing(false);
+      } else if (message.type === "RENAME_NODE_SUCCESS") {
+        console.log("[UtilInspector] Node renamed successfully:", message.data);
+        // 로컬 상태에서 해당 노드의 이름만 업데이트
+        const currentAnalysis = analysisRef.current;
+        if (currentAnalysis) {
+          console.log("[UtilInspector] Updating local state for renamed node");
+          console.log("[UtilInspector] Target node ID:", message.data.nodeId);
+          console.log("[UtilInspector] New name:", message.data.newName);
+          const updateNodeName = (node: any): any => {
+            console.log(
+              `[UtilInspector] Checking node: ${node.id} (${node.name})`
+            );
+            if (node.id === message.data.nodeId) {
+              console.log(
+                `[UtilInspector] ✅ Found target node! Updating: "${node.name}" → "${message.data.newName}"`
+              );
+              return { ...node, name: message.data.newName };
+            }
+            if (node.children && node.children.length > 0) {
+              console.log(
+                `[UtilInspector] Checking ${node.children.length} children of node: ${node.name}`
+              );
+              return {
+                ...node,
+                children: node.children.map(updateNodeName),
+              };
+            }
+            return node;
+          };
+
+          console.log("[UtilInspector] Starting recursive update...");
+          const updatedAnalysis = {
+            ...currentAnalysis,
+            structure: updateNodeName(currentAnalysis.structure),
+          };
+          setAnalysis(updatedAnalysis);
+          console.log("[UtilInspector] ✅ Local state updated successfully");
+        } else {
+          console.log(
+            "[UtilInspector] ❌ No analysis state found, cannot update"
+          );
+        }
+      } else if (message.type === "RENAME_NODE_ERROR") {
+        console.error("[UtilInspector] Error renaming node:", message.error);
+        cancelEditing();
       } else {
         console.log(
           "[UtilInspector] Received unhandled message:",
@@ -143,55 +214,12 @@ export default function UtilInspector() {
     <div style={{ padding: "16px" }}>
       <h3>컴포넌트 검사기</h3>
 
-      <div style={{ marginBottom: "16px" }}>
-        <div
-          style={{
-            padding: "12px",
-            backgroundColor: "#f8f9fa",
-            border: "1px solid #dee2e6",
-            borderRadius: "4px",
-          }}
-        >
-          <h4 style={{ margin: "0 0 8px 0", color: "#333" }}>
-            {selectedComponent.name}
-          </h4>
-          <div style={{ fontSize: "12px", color: "#666" }}>
-            <div>
-              크기: {Math.round(selectedComponent.width)} ×{" "}
-              {Math.round(selectedComponent.height)}
-            </div>
-            <div>
-              위치: ({Math.round(selectedComponent.x)},{" "}
-              {Math.round(selectedComponent.y)})
-            </div>
-            <div>타입: {selectedComponent.type}</div>
-            <div>가시성: {selectedComponent.visible ? "보임" : "숨김"}</div>
-            <div>잠금: {selectedComponent.locked ? "잠김" : "해제"}</div>
-            {selectedComponent.description && (
-              <div style={{ marginTop: "8px", fontStyle: "italic" }}>
-                설명: {selectedComponent.description}
-              </div>
-            )}
-          </div>
-          {analyzing && (
-            <div
-              style={{
-                marginTop: "12px",
-                padding: "8px 16px",
-                backgroundColor: "#28a745",
-                color: "white",
-                borderRadius: "4px",
-                fontSize: "12px",
-                textAlign: "center",
-              }}
-            >
-              구조 분석 중...
-            </div>
-          )}
-        </div>
-      </div>
+      {/* <ComponentInfoDisplay
+        component={selectedComponent}
+        analyzing={analyzing}
+      /> */}
 
-      <div
+      {/* <div
         style={{
           padding: "12px",
           backgroundColor: "#e3f2fd",
@@ -204,65 +232,21 @@ export default function UtilInspector() {
         <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#666" }}>
           선택된 컴포넌트의 기본 정보가 위에 표시됩니다.
         </p>
-      </div>
+      </div> */}
 
       {analysis && (
-        <div style={{ marginTop: "16px" }}>
-          <h4>구조 분석 결과</h4>
-          <div
-            style={{
-              padding: "12px",
-              backgroundColor: "#f8f9fa",
-              border: "1px solid #dee2e6",
-              borderRadius: "4px",
-            }}
-          >
-            <div
-              style={{ fontSize: "12px", color: "#666", marginBottom: "12px" }}
-            >
-              총 노드: {analysis.totalNodes}개
-            </div>
-
-            <div style={{ marginBottom: "12px" }}>
-              <strong>노드 타입 통계:</strong>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "4px",
-                  marginTop: "4px",
-                }}
-              >
-                {Object.entries(analysis.nodeTypes).map(([type, count]) => (
-                  <span
-                    key={type}
-                    style={{
-                      padding: "2px 6px",
-                      backgroundColor: "#e9ecef",
-                      borderRadius: "12px",
-                      fontSize: "11px",
-                    }}
-                  >
-                    {type}: {count}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <strong>구조:</strong>
-              <div
-                style={{
-                  marginTop: "8px",
-                  maxHeight: "300px",
-                  overflow: "auto",
-                }}
-              >
-                {renderNodeStructure(analysis.structure)}
-              </div>
-            </div>
-          </div>
-        </div>
+        <AnalysisResult
+          analysis={analysis}
+          expandedNodes={expandedNodes}
+          editingNodeId={editingNodeId}
+          editingName={editingName}
+          onToggleNode={toggleNode}
+          onStartEditing={startEditing}
+          onSaveNameChange={saveNameChange}
+          onCancelEditing={cancelEditing}
+          onSetEditingName={setEditingName}
+          onHandleKeyDown={handleKeyDown}
+        />
       )}
     </div>
   );
