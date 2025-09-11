@@ -3,8 +3,14 @@ import {
   LuTrash2,
   LuEyeClosed,
   LuTriangleAlert,
+  LuType,
+  LuSquare as LuRectangle,
+  LuCircle,
   LuImage,
   LuDiamond,
+  LuStar,
+  LuMinus,
+  LuTriangle,
 } from "react-icons/lu";
 
 interface UnnecessaryLayer {
@@ -50,130 +56,40 @@ export default function SimplifyLayerItem({
         return <LuEyeClosed className="w-4 h-4 text-red-500" />;
       case "숨겨진 자식 노드":
         return <LuEyeClosed className="w-4 h-4 text-orange-500" />;
+      case "부모가 숨겨진 자식 노드":
+        return <LuEyeClosed className="w-4 h-4 text-blue-500" />;
       default:
         return <LuTriangleAlert className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  // 레이어를 실제 형태로 렌더링
-  const renderLayerContent = (type: string, layer: UnnecessaryLayer) => {
+  // 레이어 타입별 아이콘
+  const getLayerTypeIcon = (type: string) => {
     switch (type) {
       case "TEXT":
-        // 텍스트 레이어는 실제 텍스트 내용 표시
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded flex items-center justify-center">
-              <span className="text-xs text-blue-600 font-bold">T</span>
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "VECTOR":
-        // 벡터 레이어는 간단한 벡터 아이콘으로 표현
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-indigo-100 border border-indigo-300 rounded flex items-center justify-center">
-              <svg
-                className="w-3 h-3 text-indigo-600"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "RECTANGLE":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded flex items-center justify-center">
-              <div className="w-2 h-2 bg-gray-600 rounded-sm"></div>
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "ELLIPSE":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-pink-100 border border-pink-300 rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-pink-600 rounded-full"></div>
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "INSTANCE":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-100 border border-orange-300 rounded flex items-center justify-center">
-              <LuDiamond className="w-3 h-3 text-orange-600" />
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "COMPONENT":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-100 border border-orange-300 rounded flex items-center justify-center">
-              <LuDiamond className="w-3 h-3 text-orange-600" />
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
-      case "IMAGE":
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-emerald-100 border border-emerald-300 rounded flex items-center justify-center">
-              <LuImage className="w-3 h-3 text-emerald-600" />
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
-
+        return <LuType className="w-4 h-4 text-blue-500" />;
       case "FRAME":
+        return null; // 형태가 없는 레이어
       case "GROUP":
-        // 형태가 없는 레이어는 이름만 표시
-        return (
-          <span className="text-sm text-gray-700 font-medium">
-            {layer.name}
-          </span>
-        );
-
+        return null; // 형태가 없는 레이어
+      case "RECTANGLE":
+        return <LuRectangle className="w-4 h-4 text-gray-500" />;
+      case "ELLIPSE":
+        return <LuCircle className="w-4 h-4 text-pink-500" />;
+      case "VECTOR":
+        return <LuTriangle className="w-4 h-4 text-indigo-500" />;
+      case "STAR":
+        return <LuStar className="w-4 h-4 text-yellow-500" />;
+      case "LINE":
+        return <LuMinus className="w-4 h-4 text-cyan-500" />;
+      case "INSTANCE":
+        return <LuDiamond className="w-4 h-4 text-orange-500" />;
+      case "COMPONENT":
+        return <LuDiamond className="w-4 h-4 text-orange-500" />;
+      case "IMAGE":
+        return <LuImage className="w-4 h-4 text-emerald-500" />;
       default:
-        return (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded flex items-center justify-center">
-              <div className="w-2 h-2 bg-gray-600 rounded-sm"></div>
-            </div>
-            <span className="text-sm text-gray-700 font-medium">
-              {layer.name}
-            </span>
-          </div>
-        );
+        return <LuRectangle className="w-4 h-4 text-gray-400" />;
     }
   };
 
@@ -184,6 +100,8 @@ export default function SimplifyLayerItem({
         return "text-red-600";
       case "숨겨진 자식 노드":
         return "text-orange-600";
+      case "부모가 숨겨진 자식 노드":
+        return "text-blue-600";
       default:
         return "text-gray-600";
     }
@@ -210,10 +128,17 @@ export default function SimplifyLayerItem({
             )}
           </div>
 
-          {/* 레이어 내용 */}
+          {/* 레이어 타입 아이콘 */}
+          <div className="flex-shrink-0">{getLayerTypeIcon(layer.type)}</div>
+
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              {renderLayerContent(layer.type, layer)}
+              <span className="text-sm font-medium text-gray-900 truncate">
+                {layer.name}
+              </span>
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                ({layer.type})
+              </span>
             </div>
 
             <div className="flex items-center gap-2 mb-1">

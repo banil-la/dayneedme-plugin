@@ -219,9 +219,29 @@ export default function SimplifyView({
             const childLayer = buildHierarchy(child, node.id);
             if (childLayer) {
               layer.children!.push(childLayer);
-              console.log(`[SIMPLIFY] 자식 노드 추가:`, {
+              console.log(`[SIMPLIFY] 자식 노드 추가 (불필요한 레이어):`, {
                 parent: layer.name,
                 child: childLayer.name,
+              });
+            } else if (!layer.visible) {
+              // 부모가 숨겨진 경우, 자식이 보이더라도 포함
+              const childUnnecessaryLayer = {
+                id: child.id,
+                name: child.name,
+                type: child.type,
+                reason: "부모가 숨겨진 자식 노드",
+                depth: (layer.depth || 0) + 1,
+                visible: child.visible,
+                locked: child.locked || false,
+                originalVisible: child.visible,
+                children: [],
+                parentId: node.id,
+              };
+              layer.children!.push(childUnnecessaryLayer);
+              console.log(`[SIMPLIFY] 부모가 숨겨진 자식 노드 추가:`, {
+                parent: layer.name,
+                child: child.name,
+                visible: child.visible,
               });
             } else {
               console.log(`[SIMPLIFY] 자식 노드 제외 (불필요하지 않음):`, {
