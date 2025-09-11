@@ -11,6 +11,9 @@ import {
   LuStar,
   LuMinus,
   LuTriangle,
+  LuSquareDashed,
+  LuFrame,
+  LuSpline,
 } from "react-icons/lu";
 
 interface UnnecessaryLayer {
@@ -51,16 +54,23 @@ export default function SimplifyLayerItem({
 }: SimplifyLayerItemProps) {
   // 이유별 아이콘
   const getReasonIcon = (reason: string) => {
-    switch (reason) {
-      case "숨겨진 부모 노드":
-        return <LuEyeClosed className="w-4 h-4 text-red-500" />;
-      case "숨겨진 자식 노드":
-        return <LuEyeClosed className="w-4 h-4 text-orange-500" />;
-      case "부모가 숨겨진 자식 노드":
-        return <LuEyeClosed className="w-4 h-4 text-blue-500" />;
-      default:
-        return <LuTriangleAlert className="w-4 h-4 text-gray-500" />;
+    // switch (reason) {
+    //   case "hidden_parent_node":
+    //     return <LuEyeClosed className="w-4 h-4 text-red-500" />;
+    //   case "hidden_child_node":
+    //     return <LuEyeClosed className="w-4 h-4 text-orange-500" />;
+    //   case "hidden_child_of_hidden_parent":
+    //     return <LuEyeClosed className="w-4 h-4 text-blue-500" />;
+    //   default:
+    //     return <LuEyeClosed className="w-4 h-4 text-red-500" />;
+    // }
+    if (reason.indexOf("hidden") !== -1) {
+      return <LuEyeClosed className="w-4 h-4 text-gray-500" />;
     }
+    if (reason === "child_of_hidden_parent") {
+      return <LuEyeClosed className="w-4 h-4 text-blue-500" />;
+    }
+    return <p>error</p>;
   };
 
   // 레이어 타입별 아이콘
@@ -69,15 +79,15 @@ export default function SimplifyLayerItem({
       case "TEXT":
         return <LuType className="w-4 h-4 text-blue-500" />;
       case "FRAME":
-        return null; // 형태가 없는 레이어
+        return <LuFrame className="w-4 h-4 text-gray-500" />;
       case "GROUP":
-        return null; // 형태가 없는 레이어
+        return <LuSquareDashed className="w-4 h-4 text-gray-500" />;
       case "RECTANGLE":
         return <LuRectangle className="w-4 h-4 text-gray-500" />;
       case "ELLIPSE":
         return <LuCircle className="w-4 h-4 text-pink-500" />;
       case "VECTOR":
-        return <LuTriangle className="w-4 h-4 text-indigo-500" />;
+        return <LuSpline className="w-4 h-4 text-indigo-500" />;
       case "STAR":
         return <LuStar className="w-4 h-4 text-yellow-500" />;
       case "LINE":
@@ -96,37 +106,32 @@ export default function SimplifyLayerItem({
   // 이유별 색상
   const getReasonColor = (reason: string) => {
     switch (reason) {
-      case "숨겨진 부모 노드":
+      case "hidden_parent_node":
         return "text-red-600";
-      case "숨겨진 자식 노드":
+      case "hidden_child_node":
         return "text-orange-600";
-      case "부모가 숨겨진 자식 노드":
+      case "hidden_child_of_hidden_parent":
         return "text-blue-600";
       default:
-        return "text-gray-600";
+        return "text-red-600";
     }
   };
 
   return (
     <div className="space-y-1">
       {/* 부모 노드 */}
-      <div
-        className="p-3 border border-gray-200 bg-white rounded-lg"
-        style={{ marginLeft: `${depth * 12}px` }}
-      >
+      <div className="p-3 border border-gray-200 bg-white rounded-lg">
         <div className="flex items-center gap-3">
           {/* 펼치기/접기 버튼 */}
-          <div className="flex-shrink-0">
-            {hasChildren && (
-              <span
-                className="text-xs text-gray-600 w-3 text-center cursor-pointer p-0.5 rounded transition-colors hover:bg-gray-200"
-                onClick={() => onToggleExpansion?.(layer.id)}
-                title={isExpanded ? "접기" : "펼치기"}
-              >
-                {isExpanded ? "▼" : "▶"}
-              </span>
-            )}
-          </div>
+          {hasChildren && (
+            <span
+              className="text-xs text-gray-600 w-3 text-center cursor-pointer p-0.5 rounded transition-colors hover:bg-gray-200"
+              onClick={() => onToggleExpansion?.(layer.id)}
+              title={isExpanded ? "접기" : "펼치기"}
+            >
+              {isExpanded ? "▼" : "▶"}
+            </span>
+          )}
 
           {/* 레이어 타입 아이콘 */}
           <div className="flex-shrink-0">{getLayerTypeIcon(layer.type)}</div>
@@ -143,12 +148,10 @@ export default function SimplifyLayerItem({
 
             <div className="flex items-center gap-2 mb-1">
               {getReasonIcon(layer.reason)}
-              <span
-                className={`text-xs font-medium ${getReasonColor(
-                  layer.reason
-                )}`}
-              >
-                {layer.reason}
+              <span className={`text-xs font-medium text-gray-500`}>
+                {layer.reason === "child_of_hidden_parent"
+                  ? "부모가 숨겨짐"
+                  : "숨겨짐"}
               </span>
             </div>
           </div>

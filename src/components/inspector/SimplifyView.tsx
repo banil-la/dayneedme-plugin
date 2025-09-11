@@ -50,7 +50,11 @@ export default function SimplifyView({
   ): UnnecessaryLayer[] => {
     const layers: UnnecessaryLayer[] = [];
 
-    const traverse = (currentNode: any, currentDepth: number) => {
+    const traverse = (
+      currentNode: any,
+      currentDepth: number,
+      parentHidden: boolean = false
+    ) => {
       const isCurrentNodeVisible = currentNode.visible;
       const hasChildren =
         currentNode.children && currentNode.children.length > 0;
@@ -62,11 +66,13 @@ export default function SimplifyView({
         visible: isCurrentNodeVisible,
         hasChildren: hasChildren,
         depth: currentDepth,
+        parentHidden: parentHidden,
       });
 
-      // 숨겨진 노드는 모두 단순화 대상 (부모-자식 관계와 무관하게)
-      if (!isCurrentNodeVisible) {
-        const reason = hasChildren ? "숨겨진 부모 노드" : "숨겨진 자식 노드";
+      // 숨겨진 노드는 모두 단순화 대상
+      // 단, 부모가 숨겨진 경우 자식들은 개별적으로 수집하지 않음
+      if (!isCurrentNodeVisible && !parentHidden) {
+        const reason = hasChildren ? "hidden_parent_node" : "hidden_child_node";
 
         console.log(`[SIMPLIFY] 숨겨진 노드 발견:`, {
           name: currentNode.name,
@@ -88,9 +94,10 @@ export default function SimplifyView({
       }
 
       // 자식 노드들 재귀적으로 탐색
+      // 부모가 숨겨진 경우, 자식들은 개별적으로 수집하지 않음 (부모 아래에서 처리됨)
       if (currentNode.children && currentNode.children.length > 0) {
         currentNode.children.forEach((child: any) =>
-          traverse(child, currentDepth + 1)
+          traverse(child, currentDepth + 1, !isCurrentNodeVisible)
         );
       }
     };
@@ -229,7 +236,7 @@ export default function SimplifyView({
                 id: child.id,
                 name: child.name,
                 type: child.type,
-                reason: "부모가 숨겨진 자식 노드",
+                reason: "child_of_hidden_parent",
                 depth: (layer.depth || 0) + 1,
                 visible: child.visible,
                 locked: child.locked || false,
@@ -304,8 +311,12 @@ export default function SimplifyView({
     });
 
     // 2단계: 아직 처리되지 않은 개별 노드들 추가 (자식이 없는 숨겨진 노드들)
+    // 단, 부모가 숨겨진 자식 노드들은 제외 (이미 부모 아래에 포함됨)
     layers.forEach((layer) => {
-      if (!processedNodes.has(layer.id)) {
+      if (
+        !processedNodes.has(layer.id) &&
+        layer.reason !== "child_of_hidden_parent"
+      ) {
         rootLayers.push(layer);
         console.log(`[SIMPLIFY] 개별 노드 추가:`, layer.name);
         processedNodes.add(layer.id);

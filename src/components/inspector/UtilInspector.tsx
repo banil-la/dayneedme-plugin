@@ -338,8 +338,13 @@ export default function UtilInspector() {
           message.data
         );
       } else if (message.type === "DELETE_LAYER_ERROR") {
-        // 에러 처리 (필요시 알림 표시)
+        // 에러 처리 및 사용자에게 알림 표시
         console.error("Layer deletion failed:", message.error);
+        // 사용자에게 알림 표시
+        emit("SHOW_NOTIFY", {
+          message: message.error || "레이어 삭제에 실패했습니다.",
+          error: true,
+        });
       }
     };
 

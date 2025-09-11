@@ -633,15 +633,91 @@ export function handleDeleteLayer(nodeId: string) {
       name: node.name,
       type: node.type,
       parent: node.parent?.type,
+      locked: node.locked,
+      parentLocked: node.parent?.locked,
+      removable: node.removable,
     });
+
+    // Figma가 제공하는 삭제 가능 여부 확인
+    if (node.removable === false) {
+      console.error("[DELETE] Node is not removable:", nodeId);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: "이 레이어는 삭제할 수 없습니다.",
+      });
+      return;
+    }
+
+    // 삭제 가능 여부 확인
+    if (node.locked) {
+      console.error("[DELETE] Cannot delete locked node:", nodeId);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: "잠긴 레이어는 삭제할 수 없습니다.",
+      });
+      return;
+    }
+
+    // 특정 노드 타입은 삭제할 수 없음
+    const nonDeletableTypes = [
+      "COMPONENT",
+      "COMPONENT_SET",
+      "DOCUMENT",
+      "PAGE",
+      "SLICE",
+      "STICKY",
+      "CONNECTOR",
+      "WIDGET",
+    ];
+
+    if (nonDeletableTypes.includes(node.type)) {
+      console.error("[DELETE] Cannot delete node type:", node.type);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: `${node.type} 타입의 레이어는 삭제할 수 없습니다.`,
+      });
+      return;
+    }
+
+    // 부모가 잠긴 경우도 확인
+    if (node.parent && node.parent.locked) {
+      console.error("[DELETE] Cannot delete node with locked parent:", nodeId);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: "부모 레이어가 잠겨있어 삭제할 수 없습니다.",
+      });
+      return;
+    }
+
+    // 인스턴스인 경우 원본 컴포넌트가 삭제되었는지 확인
+    if (node.type === "INSTANCE") {
+      const instance = node as InstanceNode;
+      if (!instance.mainComponent) {
+        console.error("[DELETE] Cannot delete detached instance:", nodeId);
+        figma.ui.postMessage({
+          type: "DELETE_LAYER_ERROR",
+          error: "연결이 끊어진 인스턴스는 삭제할 수 없습니다.",
+        });
+        return;
+      }
+    }
 
     // 노드 삭제
     const nodeName = node.name;
-    node.remove();
-    console.log("[DELETE] Node deleted successfully:", {
-      nodeId,
-      name: nodeName,
-    });
+    try {
+      node.remove();
+      console.log("[DELETE] Node deleted successfully:", {
+        nodeId,
+        name: nodeName,
+      });
+    } catch (removeError: any) {
+      console.error("[DELETE] Error deleting layer:", removeError);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: removeError.message || "레이어 삭제에 실패했습니다.",
+      });
+      return;
+    }
 
     // 성공 메시지 전송
     figma.ui.postMessage({
