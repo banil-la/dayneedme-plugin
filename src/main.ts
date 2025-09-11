@@ -18,6 +18,8 @@ import {
   handleRenameNode,
   handleChangeText,
   handleToggleVisibility,
+  handleToggleLock,
+  handleDeleteLayer,
 } from "./handlers/componentHandlers";
 import {
   handleExportImages,
@@ -203,6 +205,14 @@ export default function () {
   on("TOGGLE_VISIBILITY", (nodeId: string) => {
     console.log("[main] TOGGLE_VISIBILITY event received:", nodeId);
     handleToggleVisibility(nodeId);
+  });
+  on("TOGGLE_LOCK", (nodeId: string) => {
+    console.log("[main] TOGGLE_LOCK event received:", nodeId);
+    handleToggleLock(nodeId);
+  });
+  on("DELETE_LAYER", (nodeId: string) => {
+    console.log("[main] DELETE_LAYER event received:", nodeId);
+    handleDeleteLayer(nodeId);
   });
   on("CLONE_COMPONENT", createComponentInstance);
   on("CHECK_SELECTION", () => checkSelection(currentMode));

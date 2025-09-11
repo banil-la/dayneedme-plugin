@@ -92,33 +92,51 @@ export function handleComponentModeSelection() {
       selection.map((node) => ({ type: node.type, name: node.name }))
     );
 
-    if (
-      selection.length === 1 &&
-      (selection[0].type === "COMPONENT" || selection[0].type === "INSTANCE")
-    ) {
-      const component = selection[0] as any;
-      console.log("[main] Component/Instance selected:", component.name);
+    // 자식을 가질 수 있는 노드 타입들
+    const validTypes = ["COMPONENT", "INSTANCE", "FRAME", "GROUP", "SECTION"];
 
-      // 컴포넌트 기본 정보 추출
-      const componentInfo = {
-        id: component.id,
-        name: component.name,
-        type: component.type,
-        description: component.description || "",
-        width: component.width,
-        height: component.height,
-        x: component.x,
-        y: component.y,
-        visible: component.visible,
-        locked: component.locked,
-      };
+    if (selection.length === 1 && validTypes.includes(selection[0].type)) {
+      const node = selection[0] as any;
+      console.log(
+        "[main] Analyzable node selected:",
+        node.name,
+        "type:",
+        node.type
+      );
 
-      figma.ui.postMessage({
-        type: "COMPONENT_SELECTION_CHANGED",
-        data: componentInfo,
-      });
+      // 노드가 실제로 자식을 가지고 있는지 확인
+      const hasChildren = node.children && node.children.length > 0;
+
+      if (hasChildren) {
+        console.log("[main] Node has children, proceeding with analysis");
+
+        // 노드 기본 정보 추출
+        const nodeInfo = {
+          id: node.id,
+          name: node.name,
+          type: node.type,
+          description: node.description || "",
+          width: node.width,
+          height: node.height,
+          x: node.x,
+          y: node.y,
+          visible: node.visible,
+          locked: node.locked,
+        };
+
+        figma.ui.postMessage({
+          type: "COMPONENT_SELECTION_CHANGED",
+          data: nodeInfo,
+        });
+      } else {
+        console.log("[main] Node has no children, skipping analysis");
+        figma.ui.postMessage({
+          type: "COMPONENT_SELECTION_CHANGED",
+          data: null,
+        });
+      }
     } else {
-      console.log("[main] No valid component selected");
+      console.log("[main] No valid analyzable node selected");
       figma.ui.postMessage({
         type: "COMPONENT_SELECTION_CHANGED",
         data: null,

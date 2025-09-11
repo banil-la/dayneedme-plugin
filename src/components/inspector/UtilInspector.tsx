@@ -3,8 +3,9 @@ import { useGlobal } from "../../context/GlobalContext";
 import { emit } from "@create-figma-plugin/utilities";
 import { useEffect, useState, useRef, useCallback } from "preact/hooks";
 import ComponentInfoDisplay from "./ComponentInfo";
-import AnalysisResult from "./AnalysisResult";
+import NodeStructure from "./NodeStructure";
 import TextLayersView from "./TextLayersView";
+import SimplifyView from "./SimplifyView";
 
 interface ComponentInfo {
   id: string;
@@ -35,7 +36,10 @@ export default function UtilInspector() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"structure" | "text">("structure");
+  const [activeTab, setActiveTab] = useState<"structure" | "text" | "simplify">(
+    "structure"
+  );
+  const [unnecessaryLayerCount, setUnnecessaryLayerCount] = useState<number>(0);
 
   // 최신 상태를 참조하기 위한 ref
   const analysisRef = useRef<ComponentAnalysis | null>(null);
@@ -129,6 +133,11 @@ export default function UtilInspector() {
   // 가시성 토글 핸들러
   const handleToggleVisibility = (nodeId: string) => {
     emit("TOGGLE_VISIBILITY", nodeId);
+  };
+
+  // 잠금 토글 핸들러
+  const handleToggleLock = (nodeId: string) => {
+    emit("TOGGLE_LOCK", nodeId);
   };
 
   // 텍스트 레이어만 추출하는 함수
@@ -275,6 +284,57 @@ export default function UtilInspector() {
       } else if (message.type === "TOGGLE_VISIBILITY_ERROR") {
         // 에러 처리 (필요시 알림 표시)
         console.error("Visibility toggle failed:", message.error);
+      } else if (message.type === "TOGGLE_LOCK_SUCCESS") {
+        // 로컬 상태에서 해당 노드의 잠금 상태만 업데이트
+        console.log(
+          "[UtilInspector] TOGGLE_LOCK_SUCCESS received:",
+          message.data
+        );
+        const currentAnalysis = analysisRef.current;
+        if (currentAnalysis) {
+          const updateNodeLock = (node: any): any => {
+            if (node.id === message.data.nodeId) {
+              console.log("[UtilInspector] Updating node lock:", {
+                nodeId: node.id,
+                oldLocked: node.locked,
+                newLocked: message.data.locked,
+              });
+              return { ...node, locked: message.data.locked };
+            }
+            if (node.children && node.children.length > 0) {
+              return {
+                ...node,
+                children: node.children.map(updateNodeLock),
+              };
+            }
+            return node;
+          };
+
+          const updatedAnalysis = {
+            ...currentAnalysis,
+            structure: updateNodeLock(currentAnalysis.structure),
+          };
+          console.log(
+            "[UtilInspector] Setting updated analysis with lock change"
+          );
+          setAnalysis(updatedAnalysis);
+        } else {
+          console.log(
+            "[UtilInspector] No current analysis found for lock update"
+          );
+        }
+      } else if (message.type === "TOGGLE_LOCK_ERROR") {
+        // 에러 처리 (필요시 알림 표시)
+        console.error("Lock toggle failed:", message.error);
+      } else if (message.type === "DELETE_LAYER_SUCCESS") {
+        // 레이어 삭제 성공 시 SimplifyView에서 자체적으로 처리하므로 분석 재실행하지 않음
+        console.log(
+          "[UtilInspector] DELETE_LAYER_SUCCESS received:",
+          message.data
+        );
+      } else if (message.type === "DELETE_LAYER_ERROR") {
+        // 에러 처리 (필요시 알림 표시)
+        console.error("Layer deletion failed:", message.error);
       }
     };
 
@@ -288,25 +348,21 @@ export default function UtilInspector() {
   if (!selectedComponent) {
     return (
       <div className="p-4">
-        <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
+        <h3 className="text-lg font-semibold mb-4">빠르게 편집하기</h3>
         <div className="p-4 bg-gray-50 border border-gray-200 rounded text-center text-gray-600">
-          <p>검사를 위한 컴포넌트를 선택해 주세요.</p>
+          <p>구조 분석을 위해 자식 요소를 가진 레이어를 선택해 주세요.</p>
+          <p className="text-xs mt-2 text-gray-500">
+            (FRAME, GROUP, COMPONENT, INSTANCE, SECTION 등)
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      {/* <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
-
-      <ComponentInfoDisplay
-        component={selectedComponent}
-        analyzing={analyzing}
-      /> */}
-
+    <div className="px-4 pb-4 pt-2">
       {analysis && (
-        <div className="mt-4">
+        <div>
           {/* 탭 UI */}
           <div className="flex border-b border-gray-200 mb-4">
             <button
@@ -329,25 +385,47 @@ export default function UtilInspector() {
             >
               텍스트 ({extractTextLayers(analysis.structure).length})
             </button>
+            <button
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "simplify"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setActiveTab("simplify")}
+            >
+              <div className="flex items-center gap-2">
+                단순화
+                {unnecessaryLayerCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {unnecessaryLayerCount}
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
 
           {/* 탭 내용 */}
           {activeTab === "structure" && (
-            <AnalysisResult
-              analysis={analysis}
-              expandedNodes={expandedNodes}
-              editingNodeId={editingNodeId}
-              editingName={editingName}
-              onToggleNode={toggleNode}
-              onStartEditing={startEditing}
-              onSaveNameChange={saveNameChange}
-              onCancelEditing={cancelEditing}
-              onSetEditingName={setEditingName}
-              onHandleKeyDown={handleKeyDown}
-              onStartTextEditing={startTextEditing}
-              onSaveTextChange={saveTextChange}
-              onToggleVisibility={handleToggleVisibility}
-            />
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+              <NodeStructure
+                node={analysis.structure}
+                depth={0}
+                isRoot={true}
+                expandedNodes={expandedNodes}
+                editingNodeId={editingNodeId}
+                editingName={editingName}
+                onToggleNode={toggleNode}
+                onStartEditing={startEditing}
+                onSaveNameChange={saveNameChange}
+                onCancelEditing={cancelEditing}
+                onSetEditingName={setEditingName}
+                onHandleKeyDown={handleKeyDown}
+                onStartTextEditing={startTextEditing}
+                onSaveTextChange={saveTextChange}
+                onToggleVisibility={handleToggleVisibility}
+                onToggleLock={handleToggleLock}
+              />
+            </div>
           )}
 
           {activeTab === "text" && (
@@ -369,6 +447,17 @@ export default function UtilInspector() {
                 onHandleTextKeyDown={handleTextKeyDown}
               />
             </div>
+          )}
+
+          {activeTab === "simplify" && (
+            <SimplifyView
+              analysis={analysis}
+              onToggleVisibility={handleToggleVisibility}
+              onDeleteLayer={(nodeId) => {
+                emit("DELETE_LAYER", nodeId);
+              }}
+              onLayerCountChange={setUnnecessaryLayerCount}
+            />
           )}
         </div>
       )}

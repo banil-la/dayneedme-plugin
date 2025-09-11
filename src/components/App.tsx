@@ -39,9 +39,9 @@ const App: React.FC = () => {
         <Profile />
         {/* <SettingsSelector /> */}
       </div>
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0">
         <Utils />
-        <div className="flex-1 overflow-auto">{renderModeContent()}</div>
+        <div className="flex-1">{renderModeContent()}</div>
       </div>
     </div>
   );

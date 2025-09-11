@@ -458,6 +458,33 @@ export function handleComponentAnalysis(componentId: string) {
           fontSize: nodeInfo.fontSize,
           fontFamily: nodeInfo.fontFamily,
         });
+      }
+
+      // Auto Layout 속성 (FRAME, COMPONENT, INSTANCE에 적용 가능)
+      if (
+        node.type === "FRAME" ||
+        node.type === "COMPONENT" ||
+        node.type === "INSTANCE"
+      ) {
+        nodeInfo.layout = {
+          layoutMode: node.layoutMode || "NONE",
+          itemSpacing: node.itemSpacing || 0,
+          paddingTop: node.paddingTop || 0,
+          paddingRight: node.paddingRight || 0,
+          paddingBottom: node.paddingBottom || 0,
+          paddingLeft: node.paddingLeft || 0,
+          primaryAxisAlignItems: node.primaryAxisAlignItems || "MIN",
+          counterAxisAlignItems: node.counterAxisAlignItems || "MIN",
+          layoutWrap: node.layoutWrap || "NO_WRAP",
+          layoutSizingHorizontal: node.layoutSizingHorizontal || "FIXED",
+          layoutSizingVertical: node.layoutSizingVertical || "FIXED",
+        };
+        console.log(`[ANALYZE] Auto Layout details:`, {
+          layoutMode: nodeInfo.layout.layoutMode,
+          itemSpacing: nodeInfo.layout.itemSpacing,
+          padding: `${nodeInfo.layout.paddingTop},${nodeInfo.layout.paddingRight},${nodeInfo.layout.paddingBottom},${nodeInfo.layout.paddingLeft}`,
+          alignment: `${nodeInfo.layout.primaryAxisAlignItems},${nodeInfo.layout.counterAxisAlignItems}`,
+        });
       } else if (
         node.type === "RECTANGLE" ||
         node.type === "ELLIPSE" ||
@@ -532,6 +559,108 @@ export function handleComponentAnalysis(componentId: string) {
     figma.ui.postMessage({
       type: "COMPONENT_ANALYSIS_ERROR",
       error: "컴포넌트 분석에 실패했습니다.",
+    });
+  }
+}
+
+// 잠금 토글 함수
+export function handleToggleLock(nodeId: string) {
+  try {
+    console.log("[LOCK] Starting lock toggle:", { nodeId });
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[LOCK] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "TOGGLE_LOCK_ERROR",
+        error: "노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    console.log("[LOCK] Node found:", {
+      nodeId,
+      name: node.name,
+      type: node.type,
+      currentLocked: node.locked,
+    });
+
+    // 잠금 토글
+    const oldLocked = node.locked;
+    node.locked = !node.locked;
+    console.log("[LOCK] Lock toggled:", {
+      nodeId,
+      oldLocked,
+      newLocked: node.locked,
+    });
+
+    // 성공 메시지 전송
+    const successMessage = {
+      type: "TOGGLE_LOCK_SUCCESS",
+      data: {
+        nodeId,
+        locked: node.locked,
+      },
+    };
+    console.log("[LOCK] Sending success message:", successMessage);
+    figma.ui.postMessage(successMessage);
+  } catch (error) {
+    console.error("[LOCK] Error toggling lock:", error);
+    figma.ui.postMessage({
+      type: "TOGGLE_LOCK_ERROR",
+      error: "잠금 토글에 실패했습니다.",
+    });
+  }
+}
+
+// 레이어 삭제 함수
+export function handleDeleteLayer(nodeId: string) {
+  try {
+    console.log("[DELETE] Starting layer deletion:", { nodeId });
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[DELETE] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "DELETE_LAYER_ERROR",
+        error: "노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    console.log("[DELETE] Node found:", {
+      nodeId,
+      name: node.name,
+      type: node.type,
+      parent: node.parent?.type,
+    });
+
+    // 노드 삭제
+    const nodeName = node.name;
+    node.remove();
+    console.log("[DELETE] Node deleted successfully:", {
+      nodeId,
+      name: nodeName,
+    });
+
+    // 성공 메시지 전송
+    figma.ui.postMessage({
+      type: "DELETE_LAYER_SUCCESS",
+      data: {
+        nodeId,
+        name: nodeName,
+      },
+    });
+
+    // 사용자에게 알림
+    figma.notify(`"${nodeName}" 레이어가 삭제되었습니다.`, {
+      timeout: 2000,
+    });
+  } catch (error) {
+    console.error("[DELETE] Error deleting layer:", error);
+    figma.ui.postMessage({
+      type: "DELETE_LAYER_ERROR",
+      error: "레이어 삭제에 실패했습니다.",
     });
   }
 }
