@@ -19,6 +19,8 @@ interface AnalysisResultProps {
   onCancelEditing: () => void;
   onSetEditingName: (name: string) => void;
   onHandleKeyDown: (e: KeyboardEvent, nodeId: string) => void;
+  onStartTextEditing: (nodeId: string, currentText: string) => void;
+  onSaveTextChange: (nodeId: string) => void;
 }
 
 export default function AnalysisResult({
@@ -32,6 +34,8 @@ export default function AnalysisResult({
   onCancelEditing,
   onSetEditingName,
   onHandleKeyDown,
+  onStartTextEditing,
+  onSaveTextChange,
 }: AnalysisResultProps) {
   return (
     <div className="mt-4">
@@ -70,6 +74,8 @@ export default function AnalysisResult({
               onCancelEditing={onCancelEditing}
               onSetEditingName={onSetEditingName}
               onHandleKeyDown={onHandleKeyDown}
+              onStartTextEditing={onStartTextEditing}
+              onSaveTextChange={onSaveTextChange}
             />
           </div>
         </div>

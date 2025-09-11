@@ -40,6 +40,8 @@ interface NodeStructureProps {
   onCancelEditing: () => void;
   onSetEditingName: (name: string) => void;
   onHandleKeyDown: (e: KeyboardEvent, nodeId: string) => void;
+  onStartTextEditing: (nodeId: string, currentText: string) => void;
+  onSaveTextChange: (nodeId: string) => void;
 }
 
 export default function NodeStructure({
@@ -55,6 +57,8 @@ export default function NodeStructure({
   onCancelEditing,
   onSetEditingName,
   onHandleKeyDown,
+  onStartTextEditing,
+  onSaveTextChange,
 }: NodeStructureProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = isRoot || expandedNodes.has(node.id);
@@ -93,10 +97,9 @@ export default function NodeStructure({
                   onSetEditingName((e.target as HTMLInputElement).value)
                 }
                 onKeyDown={(e) => onHandleKeyDown(e, node.id)}
-                onBlur={() => {}}
+                onBlur={() => onCancelEditing()}
                 className="px-1.5 py-0.5 border border-blue-500 rounded text-xs font-bold outline-none"
               />
-              <span className="text-xs text-gray-600">({node.type})</span>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -122,17 +125,42 @@ export default function NodeStructure({
                   >
                     {node.name}
                   </strong>
-                  {node.width && node.height && (
-                    <span className="text-gray-600 text-xs">
-                      {Math.round(node.width)}×{Math.round(node.height)}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
           )}
+
+          {/* TEXT 타입일 때 텍스트 편집 */}
           {node.type === "TEXT" && node.text && (
-            <div className="text-blue-600 mt-1 text-xs">"{node.text}"</div>
+            <div className="mt-1">
+              {editingNodeId === `${node.id}_text` ? (
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) =>
+                    onSetEditingName((e.target as HTMLInputElement).value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      onSaveTextChange(node.id);
+                    } else if (e.key === "Escape") {
+                      onCancelEditing();
+                    }
+                  }}
+                  onBlur={() => onCancelEditing()}
+                  className="px-1.5 py-0.5 border border-green-500 rounded text-xs font-bold outline-none w-full"
+                  placeholder="텍스트 입력..."
+                />
+              ) : (
+                <div
+                  className="text-blue-600 text-xs cursor-pointer px-1 py-0.5 rounded transition-colors hover:bg-blue-50"
+                  onClick={() => onStartTextEditing(node.id, node.text)}
+                  title="클릭하여 텍스트 변경"
+                >
+                  {node.text}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -155,6 +183,8 @@ export default function NodeStructure({
               onCancelEditing={onCancelEditing}
               onSetEditingName={onSetEditingName}
               onHandleKeyDown={onHandleKeyDown}
+              onStartTextEditing={onStartTextEditing}
+              onSaveTextChange={onSaveTextChange}
             />
           ))}
         </div>

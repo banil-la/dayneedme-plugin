@@ -264,6 +264,82 @@ export function handleRenameNode(nodeId: string, newName: string) {
   }
 }
 
+// 텍스트 변경 함수
+export async function handleChangeText(nodeId: string, newText: string) {
+  try {
+    console.log("[TEXT] Starting text change:", { nodeId, newText });
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[TEXT] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "CHANGE_TEXT_ERROR",
+        error: "텍스트 노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    if (node.type !== "TEXT") {
+      console.error("[TEXT] Node is not a text node:", node.type);
+      figma.ui.postMessage({
+        type: "CHANGE_TEXT_ERROR",
+        error: "선택한 노드는 텍스트 노드가 아닙니다.",
+      });
+      return;
+    }
+
+    console.log("[TEXT] Found text node:", {
+      id: node.id,
+      name: node.name,
+      currentText: node.characters,
+    });
+
+    // 폰트 로드 후 텍스트 변경
+    try {
+      await figma.loadFontAsync(node.fontName);
+      console.log("[TEXT] Font loaded successfully");
+    } catch (fontError) {
+      console.warn(
+        "[TEXT] Font loading failed, trying with default font:",
+        fontError
+      );
+      // 기본 폰트로 시도
+      try {
+        await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+      } catch (defaultFontError) {
+        console.error(
+          "[TEXT] Default font loading also failed:",
+          defaultFontError
+        );
+      }
+    }
+
+    // 텍스트 변경
+    node.characters = newText;
+
+    console.log("[TEXT] Text changed successfully:", {
+      id: node.id,
+      oldText: node.characters,
+      newText: newText,
+    });
+
+    // UI로 성공 메시지 전송
+    figma.ui.postMessage({
+      type: "CHANGE_TEXT_SUCCESS",
+      data: {
+        nodeId: node.id,
+        newText: newText,
+      },
+    });
+  } catch (error) {
+    console.error("[TEXT] Error changing text:", error);
+    figma.ui.postMessage({
+      type: "CHANGE_TEXT_ERROR",
+      error: "텍스트 변경에 실패했습니다.",
+    });
+  }
+}
+
 export function handleComponentAnalysis(componentId: string) {
   try {
     console.log("[ANALYZE] Starting component analysis for ID:", componentId);

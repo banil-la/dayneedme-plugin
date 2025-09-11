@@ -16,6 +16,7 @@ import {
   fetchComponentsList,
   handleComponentAnalysis,
   handleRenameNode,
+  handleChangeText,
 } from "./handlers/componentHandlers";
 import {
   handleExportImages,
@@ -189,6 +190,13 @@ export default function () {
     ({ nodeId, newName }: { nodeId: string; newName: string }) => {
       console.log("[main] RENAME_NODE event received:", { nodeId, newName });
       handleRenameNode(nodeId, newName);
+    }
+  );
+  on(
+    "CHANGE_TEXT",
+    ({ nodeId, newText }: { nodeId: string; newText: string }) => {
+      console.log("[main] CHANGE_TEXT event received:", { nodeId, newText });
+      handleChangeText(nodeId, newText);
     }
   );
   on("CLONE_COMPONENT", createComponentInstance);

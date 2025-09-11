@@ -85,6 +85,20 @@ export default function UtilInspector() {
     }
   };
 
+  // 텍스트 편집 시작
+  const startTextEditing = (nodeId: string, currentText: string) => {
+    setEditingNodeId(`${nodeId}_text`);
+    setEditingName(currentText);
+  };
+
+  // 텍스트 변경 저장
+  const saveTextChange = (nodeId: string) => {
+    if (editingName.trim() && editingName !== "") {
+      emit("CHANGE_TEXT", { nodeId, newText: editingName.trim() });
+    }
+    cancelEditing();
+  };
+
   // 3depth까지 자동으로 펼치는 함수
   const expandNodesToDepth = (
     node: any,
@@ -155,6 +169,31 @@ export default function UtilInspector() {
         }
       } else if (message.type === "RENAME_NODE_ERROR") {
         cancelEditing();
+      } else if (message.type === "CHANGE_TEXT_SUCCESS") {
+        // 로컬 상태에서 해당 노드의 텍스트만 업데이트
+        const currentAnalysis = analysisRef.current;
+        if (currentAnalysis) {
+          const updateNodeText = (node: any): any => {
+            if (node.id === message.data.nodeId) {
+              return { ...node, text: message.data.newText };
+            }
+            if (node.children && node.children.length > 0) {
+              return {
+                ...node,
+                children: node.children.map(updateNodeText),
+              };
+            }
+            return node;
+          };
+
+          const updatedAnalysis = {
+            ...currentAnalysis,
+            structure: updateNodeText(currentAnalysis.structure),
+          };
+          setAnalysis(updatedAnalysis);
+        }
+      } else if (message.type === "CHANGE_TEXT_ERROR") {
+        cancelEditing();
       }
     };
 
@@ -178,12 +217,12 @@ export default function UtilInspector() {
 
   return (
     <div className="p-4">
-      <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
+      {/* <h3 className="text-lg font-semibold mb-4">컴포넌트 검사기</h3>
 
       <ComponentInfoDisplay
         component={selectedComponent}
         analyzing={analyzing}
-      />
+      /> */}
 
       {analysis && (
         <AnalysisResult
@@ -197,6 +236,8 @@ export default function UtilInspector() {
           onCancelEditing={cancelEditing}
           onSetEditingName={setEditingName}
           onHandleKeyDown={handleKeyDown}
+          onStartTextEditing={startTextEditing}
+          onSaveTextChange={saveTextChange}
         />
       )}
     </div>
