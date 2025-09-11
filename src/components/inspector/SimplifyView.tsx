@@ -41,7 +41,6 @@ export default function SimplifyView({
     UnnecessaryLayer[]
   >([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedLayers, setSelectedLayers] = useState<Set<string>>(new Set());
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // 불필요한 레이어 감지 함수 (숨겨진 노드만 단순화 대상)
@@ -207,6 +206,15 @@ export default function SimplifyView({
 
         // 자식 노드들 중에서 단순화 대상인 것들만 처리
         if (node.children) {
+          console.log(`[SIMPLIFY] 부모 노드 "${layer.name}"의 자식들 처리:`, {
+            totalChildren: node.children.length,
+            children: node.children.map((c: any) => ({
+              name: c.name,
+              type: c.type,
+              visible: c.visible,
+            })),
+          });
+
           node.children.forEach((child: any) => {
             const childLayer = buildHierarchy(child, node.id);
             if (childLayer) {
@@ -214,6 +222,12 @@ export default function SimplifyView({
               console.log(`[SIMPLIFY] 자식 노드 추가:`, {
                 parent: layer.name,
                 child: childLayer.name,
+              });
+            } else {
+              console.log(`[SIMPLIFY] 자식 노드 제외 (불필요하지 않음):`, {
+                parent: layer.name,
+                child: child.name,
+                visible: child.visible,
               });
             }
           });
@@ -233,8 +247,25 @@ export default function SimplifyView({
       if (!processedNodes.has(layer.id)) {
         const nodeInTree = findNodeInTree(rootNode, layer.id);
         if (nodeInTree) {
+          console.log(`[SIMPLIFY] 노드 찾음:`, {
+            name: layer.name,
+            type: layer.type,
+            hasChildren: nodeInTree.children && nodeInTree.children.length > 0,
+            childrenCount: nodeInTree.children ? nodeInTree.children.length : 0,
+          });
+
           const hierarchicalLayer = buildHierarchy(nodeInTree);
           if (hierarchicalLayer) {
+            console.log(`[SIMPLIFY] 계층 구조 생성됨:`, {
+              name: hierarchicalLayer.name,
+              childrenCount: hierarchicalLayer.children
+                ? hierarchicalLayer.children.length
+                : 0,
+              children: hierarchicalLayer.children
+                ? hierarchicalLayer.children.map((c) => c.name)
+                : [],
+            });
+
             rootLayers.push(hierarchicalLayer);
             console.log(
               `[SIMPLIFY] 부모 노드 계층 구조 추가:`,
@@ -243,7 +274,11 @@ export default function SimplifyView({
 
             // 처리된 노드들 마킹
             markProcessedNodes(hierarchicalLayer, processedNodes);
+          } else {
+            console.log(`[SIMPLIFY] 계층 구조 생성 실패:`, layer.name);
           }
+        } else {
+          console.log(`[SIMPLIFY] 트리에서 노드를 찾을 수 없음:`, layer.name);
         }
       }
     });
@@ -277,7 +312,6 @@ export default function SimplifyView({
     if (!analysis || !analysis.structure) return;
 
     setIsAnalyzing(true);
-    setSelectedLayers(new Set());
 
     // 실제로는 비동기로 처리하지만, 여기서는 즉시 결과 반환
     setTimeout(() => {
@@ -304,7 +338,6 @@ export default function SimplifyView({
         analysis.structure
       );
       setUnnecessaryLayers(hierarchicalLayers);
-      setSelectedLayers(new Set());
 
       // 3 depth까지 자동 확장 (구조 탭과 동일)
       const autoExpandNodes = (
@@ -340,37 +373,6 @@ export default function SimplifyView({
     }
   }, [unnecessaryLayers.length, onLayerCountChange]);
 
-  // 레이어 선택/해제
-  const toggleLayerSelection = (layerId: string) => {
-    const newSelected = new Set(selectedLayers);
-    if (newSelected.has(layerId)) {
-      newSelected.delete(layerId);
-    } else {
-      newSelected.add(layerId);
-    }
-    setSelectedLayers(newSelected);
-  };
-
-  // 전체 선택/해제
-  const toggleAllSelection = () => {
-    const allLayerIds = new Set<string>();
-    const collectAllIds = (layers: UnnecessaryLayer[]) => {
-      layers.forEach((layer) => {
-        allLayerIds.add(layer.id);
-        if (layer.children) {
-          collectAllIds(layer.children);
-        }
-      });
-    };
-    collectAllIds(unnecessaryLayers);
-
-    if (selectedLayers.size === allLayerIds.size) {
-      setSelectedLayers(new Set());
-    } else {
-      setSelectedLayers(allLayerIds);
-    }
-  };
-
   // 노드 펼치기/접기
   const toggleNodeExpansion = (nodeId: string) => {
     const newExpanded = new Set(expandedNodes);
@@ -380,18 +382,6 @@ export default function SimplifyView({
       newExpanded.add(nodeId);
     }
     setExpandedNodes(newExpanded);
-  };
-
-  // 선택된 레이어들 정리
-  const cleanupSelectedLayers = () => {
-    selectedLayers.forEach((layerId) => {
-      onDeleteLayer(layerId);
-    });
-    setSelectedLayers(new Set());
-    // 삭제된 레이어들을 목록에서 제거
-    setUnnecessaryLayers((prev) =>
-      prev.filter((layer) => !selectedLayers.has(layer.id))
-    );
   };
 
   // 계층적 구조 렌더링
@@ -409,8 +399,6 @@ export default function SimplifyView({
         <SimplifyLayerItem
           key={layer.id}
           layer={layer}
-          isSelected={selectedLayers.has(layer.id)}
-          onToggleSelection={toggleLayerSelection}
           onToggleVisibility={onToggleVisibility}
           onDeleteLayer={onDeleteLayer}
           onUpdateLayerVisibility={(layerId, visible) => {
@@ -450,31 +438,6 @@ export default function SimplifyView({
             {isAnalyzing ? "분석 중..." : "다시 분석"}
           </button>
         </div>
-
-        {unnecessaryLayers.length > 0 && (
-          <div className="flex items-center gap-2 mb-3">
-            <label className="flex items-center gap-2 text-xs text-gray-600">
-              <input
-                type="checkbox"
-                checked={selectedLayers.size === unnecessaryLayers.length}
-                onChange={toggleAllSelection}
-                className="rounded"
-              />
-              전체 선택 ({selectedLayers.size}/{unnecessaryLayers.length})
-            </label>
-            {selectedLayers.size > 0 && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={cleanupSelectedLayers}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  <LuTrash2 className="w-3 h-3" />
-                  삭제 ({selectedLayers.size}개)
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {isAnalyzing ? (
