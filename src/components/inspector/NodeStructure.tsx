@@ -11,6 +11,7 @@ import {
   LuEye,
   LuEyeOff,
 } from "react-icons/lu";
+import EditableText from "./EditableText";
 
 // 노드 타입별 아이콘 매핑 함수
 const getNodeIcon = (nodeType: string) => {
@@ -68,22 +69,6 @@ export default function NodeStructure({
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = isRoot || expandedNodes.has(node.id);
   const canToggle = hasChildren && !isRoot;
-  const inputRef = useRef<HTMLInputElement>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
-
-  // 텍스트 편집 모드일 때 전체 텍스트 선택
-  useEffect(() => {
-    if (editingNodeId === `${node.id}_text` && inputRef.current) {
-      inputRef.current.select();
-    }
-  }, [editingNodeId, node.id]);
-
-  // 이름 편집 모드일 때 전체 텍스트 선택
-  useEffect(() => {
-    if (editingNodeId === node.id && nameInputRef.current) {
-      nameInputRef.current.select();
-    }
-  }, [editingNodeId, node.id]);
 
   return (
     <div key={node.id} className="mb-0.5">
@@ -109,46 +94,32 @@ export default function NodeStructure({
 
         {/* 노드 정보 */}
         <div className="flex-1">
-          {editingNodeId === node.id ? (
-            <div className="flex items-center gap-2">
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={editingName}
-                onChange={(e) =>
-                  onSetEditingName((e.target as HTMLInputElement).value)
-                }
-                onKeyDown={(e) => onHandleKeyDown(e, node.id)}
-                onBlur={() => onCancelEditing()}
-                autoFocus
-                className="px-1.5 py-0.5 border border-blue-500 rounded text-xs font-bold outline-none"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {getNodeIcon(node.type)}
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <strong
-                    className={`px-1 py-0.5 rounded transition-colors ${
-                      node.type === "INSTANCE"
-                        ? "cursor-not-allowed text-gray-500"
-                        : "cursor-pointer hover:bg-gray-200"
-                    }`}
-                    onClick={() => {
-                      if (node.type !== "INSTANCE") {
-                        onStartEditing(node.id, node.name);
-                      }
-                    }}
-                    title={
-                      node.type === "INSTANCE"
-                        ? "인스턴스는 이름을 변경할 수 없습니다"
-                        : "클릭하여 이름 변경"
-                    }
-                  >
+          <div className="flex items-center gap-2">
+            {getNodeIcon(node.type)}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                {node.type === "INSTANCE" ? (
+                  <strong className="px-1 py-0.5 rounded transition-colors cursor-not-allowed text-gray-500">
                     {node.name}
                   </strong>
-                </div>
+                ) : (
+                  <EditableText
+                    value={node.name}
+                    editingNodeId={editingNodeId}
+                    nodeId={node.id}
+                    editingName={editingName}
+                    onStartEditing={onStartEditing}
+                    onSaveChange={onSaveNameChange}
+                    onCancelEditing={onCancelEditing}
+                    onSetEditingName={onSetEditingName}
+                    onHandleKeyDown={onHandleKeyDown}
+                    placeholder="레이어 이름"
+                    className="flex-1"
+                    editingClassName="px-1.5 py-0.5 border border-blue-500 rounded text-xs font-bold outline-none"
+                    displayClassName="px-1 py-0.5 rounded transition-colors cursor-pointer hover:bg-gray-200 font-bold"
+                    title="클릭하여 이름 변경"
+                  />
+                )}
               </div>
               <button
                 className="p-1 text-gray-500 hover:text-gray-700 rounded transition-colors"
@@ -165,40 +136,35 @@ export default function NodeStructure({
                 )}
               </button>
             </div>
-          )}
+          </div>
 
           {/* TEXT 타입일 때 텍스트 편집 */}
           {node.type === "TEXT" && node.text && (
             <div className="mt-1">
-              {editingNodeId === `${node.id}_text` ? (
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={editingName}
-                  onChange={(e) =>
-                    onSetEditingName((e.target as HTMLInputElement).value)
+              <EditableText
+                value={node.text}
+                editingNodeId={editingNodeId}
+                nodeId={`${node.id}_text`}
+                editingName={editingName}
+                onStartEditing={(nodeId, currentText) =>
+                  onStartTextEditing(node.id, currentText)
+                }
+                onSaveChange={(nodeId) => onSaveTextChange(node.id)}
+                onCancelEditing={onCancelEditing}
+                onSetEditingName={onSetEditingName}
+                onHandleKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onSaveTextChange(node.id);
+                  } else if (e.key === "Escape") {
+                    onCancelEditing();
                   }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      onSaveTextChange(node.id);
-                    } else if (e.key === "Escape") {
-                      onCancelEditing();
-                    }
-                  }}
-                  onBlur={() => onCancelEditing()}
-                  autoFocus
-                  className="px-1.5 py-0.5 border border-green-500 rounded text-xs font-bold outline-none w-full"
-                  placeholder="텍스트 입력..."
-                />
-              ) : (
-                <div
-                  className="text-blue-600 text-xs cursor-pointer px-1 py-0.5 rounded transition-colors hover:bg-blue-50"
-                  onClick={() => onStartTextEditing(node.id, node.text)}
-                  title="클릭하여 텍스트 변경"
-                >
-                  {node.text}
-                </div>
-              )}
+                }}
+                placeholder="텍스트 입력..."
+                className="w-full"
+                editingClassName="px-1.5 py-0.5 border border-green-500 rounded text-xs font-bold outline-none w-full"
+                displayClassName="text-blue-600 text-xs cursor-pointer px-1 py-0.5 rounded transition-colors hover:bg-blue-50"
+                title="클릭하여 텍스트 변경"
+              />
             </div>
           )}
         </div>

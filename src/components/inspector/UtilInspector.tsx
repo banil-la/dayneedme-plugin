@@ -4,6 +4,7 @@ import { emit } from "@create-figma-plugin/utilities";
 import { useEffect, useState, useRef, useCallback } from "preact/hooks";
 import ComponentInfoDisplay from "./ComponentInfo";
 import AnalysisResult from "./AnalysisResult";
+import TextLayersView from "./TextLayersView";
 
 interface ComponentInfo {
   id: string;
@@ -34,6 +35,7 @@ export default function UtilInspector() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"structure" | "text">("structure");
 
   // 최신 상태를 참조하기 위한 ref
   const analysisRef = useRef<ComponentAnalysis | null>(null);
@@ -58,6 +60,10 @@ export default function UtilInspector() {
 
   // 이름 편집 시작
   const startEditing = (nodeId: string, currentName: string) => {
+    console.log("[UtilInspector] Starting name editing:", {
+      nodeId,
+      currentName,
+    });
     setEditingNodeId(nodeId);
     setEditingName(currentName);
   };
@@ -70,6 +76,10 @@ export default function UtilInspector() {
 
   // 이름 변경 저장
   const saveNameChange = (nodeId: string) => {
+    console.log("[UtilInspector] Saving name change:", {
+      nodeId,
+      newName: editingName.trim(),
+    });
     if (editingName.trim() && editingName !== "") {
       emit("RENAME_NODE", { nodeId, newName: editingName.trim() });
     }
@@ -85,14 +95,31 @@ export default function UtilInspector() {
     }
   };
 
+  // 키보드 이벤트 핸들러 (텍스트 편집용)
+  const handleTextKeyDown = (e: KeyboardEvent, nodeId: string) => {
+    if (e.key === "Enter") {
+      saveTextChange(nodeId);
+    } else if (e.key === "Escape") {
+      cancelEditing();
+    }
+  };
+
   // 텍스트 편집 시작
   const startTextEditing = (nodeId: string, currentText: string) => {
+    console.log("[UtilInspector] Starting text editing:", {
+      nodeId,
+      currentText,
+    });
     setEditingNodeId(`${nodeId}_text`);
     setEditingName(currentText);
   };
 
   // 텍스트 변경 저장
   const saveTextChange = (nodeId: string) => {
+    console.log("[UtilInspector] Saving text change:", {
+      nodeId,
+      newText: editingName.trim(),
+    });
     if (editingName.trim() && editingName !== "") {
       emit("CHANGE_TEXT", { nodeId, newText: editingName.trim() });
     }
@@ -102,6 +129,29 @@ export default function UtilInspector() {
   // 가시성 토글 핸들러
   const handleToggleVisibility = (nodeId: string) => {
     emit("TOGGLE_VISIBILITY", nodeId);
+  };
+
+  // 텍스트 레이어만 추출하는 함수
+  const extractTextLayers = (node: any): any[] => {
+    const textLayers: any[] = [];
+
+    const traverse = (currentNode: any) => {
+      if (currentNode.type === "TEXT" && currentNode.text) {
+        textLayers.push({
+          ...currentNode,
+          // 위치 정보를 상대적으로 계산
+          relativeX: currentNode.x,
+          relativeY: currentNode.y,
+        });
+      }
+
+      if (currentNode.children && currentNode.children.length > 0) {
+        currentNode.children.forEach(traverse);
+      }
+    };
+
+    traverse(node);
+    return textLayers;
   };
 
   // 3depth까지 자동으로 펼치는 함수
@@ -256,21 +306,71 @@ export default function UtilInspector() {
       /> */}
 
       {analysis && (
-        <AnalysisResult
-          analysis={analysis}
-          expandedNodes={expandedNodes}
-          editingNodeId={editingNodeId}
-          editingName={editingName}
-          onToggleNode={toggleNode}
-          onStartEditing={startEditing}
-          onSaveNameChange={saveNameChange}
-          onCancelEditing={cancelEditing}
-          onSetEditingName={setEditingName}
-          onHandleKeyDown={handleKeyDown}
-          onStartTextEditing={startTextEditing}
-          onSaveTextChange={saveTextChange}
-          onToggleVisibility={handleToggleVisibility}
-        />
+        <div className="mt-4">
+          {/* 탭 UI */}
+          <div className="flex border-b border-gray-200 mb-4">
+            <button
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "structure"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setActiveTab("structure")}
+            >
+              구조
+            </button>
+            <button
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "text"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+              onClick={() => setActiveTab("text")}
+            >
+              텍스트 ({extractTextLayers(analysis.structure).length})
+            </button>
+          </div>
+
+          {/* 탭 내용 */}
+          {activeTab === "structure" && (
+            <AnalysisResult
+              analysis={analysis}
+              expandedNodes={expandedNodes}
+              editingNodeId={editingNodeId}
+              editingName={editingName}
+              onToggleNode={toggleNode}
+              onStartEditing={startEditing}
+              onSaveNameChange={saveNameChange}
+              onCancelEditing={cancelEditing}
+              onSetEditingName={setEditingName}
+              onHandleKeyDown={handleKeyDown}
+              onStartTextEditing={startTextEditing}
+              onSaveTextChange={saveTextChange}
+              onToggleVisibility={handleToggleVisibility}
+            />
+          )}
+
+          {activeTab === "text" && (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+              <div className="text-xs text-gray-600 mb-3">
+                텍스트 레이어: {extractTextLayers(analysis.structure).length}개
+              </div>
+              <TextLayersView
+                textLayers={extractTextLayers(analysis.structure)}
+                editingNodeId={editingNodeId}
+                editingName={editingName}
+                onStartTextEditing={startTextEditing}
+                onSaveTextChange={saveTextChange}
+                onStartEditing={startEditing}
+                onSaveNameChange={saveNameChange}
+                onCancelEditing={cancelEditing}
+                onSetEditingName={setEditingName}
+                onHandleKeyDown={handleKeyDown}
+                onHandleTextKeyDown={handleTextKeyDown}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
