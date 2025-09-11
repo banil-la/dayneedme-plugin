@@ -2,14 +2,19 @@ import { h } from "preact";
 import { useGlobal } from "../context/GlobalContext";
 import { Mode } from "../types";
 import classNames from "classnames";
-import { LuLink2, LuBookA, LuAccessibility } from "react-icons/lu";
+import {
+  LuLink2,
+  LuBookA,
+  LuAccessibility,
+  LuSquareDashedMousePointer,
+} from "react-icons/lu";
 
 const TABS = [
-  // {
-  //   id: "history" as const,
-  //   icon: <LuLandmark size={`1.5em`} />,
-  //   label: "History",
-  // },
+  {
+    id: "inspector" as const,
+    icon: <LuSquareDashedMousePointer size={`1.5em`} />,
+    label: "Inspector",
+  },
   {
     id: "accessibility" as const,
     icon: <LuAccessibility size={`1.5em`} />,

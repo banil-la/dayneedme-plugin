@@ -9,6 +9,7 @@ import Utils from "./Mode";
 import UtilString from "./strings/UtilString";
 import UtilURL from "./url/UtilURL";
 import UtilAccessibility from "./accessibility/UtilAccessibility";
+import UtilInspector from "./inspector/UtilInspector";
 
 const App: React.FC = () => {
   const { authToken } = useAuth();
@@ -25,6 +26,8 @@ const App: React.FC = () => {
         return <UtilURL />;
       case "accessibility":
         return <UtilAccessibility />;
+      case "inspector":
+        return <UtilInspector />;
       default:
         return null;
     }

@@ -1,6 +1,6 @@
 import { h } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { on, emit } from "@create-figma-plugin/utilities";
+import { emit } from "@create-figma-plugin/utilities";
 import { StringResults } from "./StringResults";
 import { useStringSearch } from "../../hooks/useStringSearch";
 

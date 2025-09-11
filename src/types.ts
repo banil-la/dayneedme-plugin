@@ -57,6 +57,7 @@ export interface GetUrlShareHandler extends EventHandler {
 }
 
 export type Mode =
+  | "inspector"
   | "history"
   | "string"
   | "url"
@@ -67,13 +68,13 @@ export type Mode =
 export type OS = "ios" | "android" | "common";
 export type Product = "adotphone" | "aiphone";
 
-export interface SaveStringSettingsHandler extends EventHandler {
-  name: "SAVE_STRING_SETTINGS";
+export interface SaveSettingsHandler extends EventHandler {
+  name: "SAVE_SETTINGS";
   handler: (settings: { os: OS; product: Product }) => void;
 }
 
-export interface LoadStringSettingsHandler extends EventHandler {
-  name: "LOAD_STRING_SETTINGS";
+export interface LoadSettingsHandler extends EventHandler {
+  name: "LOAD_SETTINGS";
   handler: () => void;
 }
 

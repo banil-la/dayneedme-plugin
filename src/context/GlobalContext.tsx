@@ -12,8 +12,8 @@ const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
 export function GlobalProvider({ children }: { children: JSX.Element }) {
   const { authToken } = useAuth();
   const [env, setEnvState] = useState<"dev" | "prod">("dev");
-  const [mode, setModeState] = useState<Mode>("history");
-  const [os, setOS] = useState<OS>("ios");
+  const [mode, setModeState] = useState<Mode>("inspector");
+  const [os, setOS] = useState<OS>("android");
   const [product, setProduct] = useState<Product>("adotphone");
   const [fileKeyInfo, setFileKeyInfo] = useState<FileKeyInfo | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
@@ -123,10 +123,10 @@ export function GlobalProvider({ children }: { children: JSX.Element }) {
   // 초기 설정 로드 - 컴포넌트 마운트 시 즉시 실행
   useEffect(() => {
     // 초기 로드
-    emit("LOAD_STRING_SETTINGS");
+    emit("LOAD_SETTINGS");
 
     // 설정 로드 이벤트 리스너
-    const unsubscribeLoad = on("STRING_SETTINGS_LOADED", (settings) => {
+    const unsubscribeLoad = on("SETTINGS_LOADED", (settings) => {
       if (settings) {
         // console.log("[GlobalContext] Loading settings:", settings);
         setOS(settings.os);
@@ -135,7 +135,7 @@ export function GlobalProvider({ children }: { children: JSX.Element }) {
     });
 
     // 설정 저장 이벤트 리스너 추가
-    const unsubscribeSave = on("STRING_SETTINGS_SAVED", (settings) => {
+    const unsubscribeSave = on("SETTINGS_SAVED", (settings) => {
       // console.log("[GlobalContext] Settings saved:", settings);
     });
 
@@ -149,7 +149,7 @@ export function GlobalProvider({ children }: { children: JSX.Element }) {
   useEffect(() => {
     const settings = { os, product };
     // console.log("[GlobalContext] Saving settings:", settings);
-    emit("SAVE_STRING_SETTINGS", settings);
+    emit("SAVE_SETTINGS", settings);
   }, [os, product]); // os나 product가 변경될 때마다 저장
 
   const value = {
