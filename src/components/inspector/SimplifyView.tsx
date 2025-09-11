@@ -305,7 +305,27 @@ export default function SimplifyView({
       );
       setUnnecessaryLayers(hierarchicalLayers);
       setSelectedLayers(new Set());
-      setExpandedNodes(new Set()); // 확장 상태 초기화
+
+      // 3 depth까지 자동 확장 (구조 탭과 동일)
+      const autoExpandNodes = (
+        layers: UnnecessaryLayer[],
+        depth: number = 0
+      ) => {
+        const expanded = new Set<string>();
+        layers.forEach((layer) => {
+          if (depth < 3 && layer.children && layer.children.length > 0) {
+            expanded.add(layer.id);
+            // 자식 노드들도 재귀적으로 확장
+            const childExpanded = autoExpandNodes(layer.children, depth + 1);
+            childExpanded.forEach((id) => expanded.add(id));
+          }
+        });
+        return expanded;
+      };
+
+      const autoExpanded = autoExpandNodes(hierarchicalLayers);
+      setExpandedNodes(autoExpanded);
+
       // 부모에게 레이어 개수 전달
       if (onLayerCountChange) {
         onLayerCountChange(flatLayers.length);
@@ -406,10 +426,7 @@ export default function SimplifyView({
         />
       );
 
-      // 자식 노드들 렌더링 (확장된 경우에만)
-      if (hasChildren && isExpanded) {
-        result.push(...renderHierarchicalLayers(layer.children!, depth + 1));
-      }
+      // 자식 노드들은 SimplifyLayerItem 내부에서 렌더링됨
     });
 
     return result;

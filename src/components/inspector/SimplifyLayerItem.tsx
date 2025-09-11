@@ -28,6 +28,8 @@ interface UnnecessaryLayer {
   visible: boolean;
   locked: boolean;
   originalVisible: boolean;
+  children?: UnnecessaryLayer[];
+  parentId?: string;
 }
 
 interface SimplifyLayerItemProps {
@@ -129,81 +131,110 @@ export default function SimplifyLayerItem({
   };
 
   return (
-    <div
-      className={`p-3 border rounded-lg ${
-        isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        {/* 펼치기/접기 버튼 */}
-        <div className="flex-shrink-0">
-          {hasChildren ? (
-            <button
-              onClick={() => onToggleExpansion?.(layer.id)}
-              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded transition-colors"
-              title={isExpanded ? "접기" : "펼치기"}
-            >
-              {isExpanded ? (
-                <LuArrowDown className="w-3 h-3" />
-              ) : (
-                <LuArrowRight className="w-3 h-3" />
-              )}
-            </button>
-          ) : (
-            <div className="w-5 h-5 no-children" /> // 공간 확보
-          )}
-        </div>
-
-        {/* 체크 버튼 */}
-        <button
-          onClick={handleToggleSelection}
-          className={`p-1 rounded transition-colors ${
-            isSelected
-              ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-          }`}
-          title={isSelected ? "선택 해제" : "선택"}
-        >
-          {isSelected ? (
-            <LuCheck className="w-4 h-4" />
-          ) : (
-            <LuSquare className="w-4 h-4" />
-          )}
-        </button>
-
-        {/* 레이어 타입 아이콘 */}
-        <div className="flex-shrink-0">{getLayerTypeIcon(layer.type)}</div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-gray-900 truncate">
-              {layer.name}
-            </span>
-            <span className="text-xs text-gray-500 flex-shrink-0">
-              ({layer.type})
-            </span>
+    <div className="space-y-1">
+      {/* 부모 노드 */}
+      <div
+        className={`p-3 border rounded-lg ${
+          isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"
+        }`}
+        style={{ marginLeft: `${depth * 12}px` }}
+      >
+        <div className="flex items-center gap-3">
+          {/* 펼치기/접기 버튼 */}
+          <div className="flex-shrink-0">
+            {hasChildren ? (
+              <span
+                className="text-xs text-gray-600 w-3 text-center cursor-pointer p-0.5 rounded transition-colors hover:bg-gray-200"
+                onClick={() => onToggleExpansion?.(layer.id)}
+                title={isExpanded ? "접기" : "펼치기"}
+              >
+                {isExpanded ? "▼" : "▶"}
+              </span>
+            ) : (
+              <div className="w-3" />
+            )}
           </div>
 
-          <div className="flex items-center gap-2 mb-1">
-            {getReasonIcon(layer.reason)}
-            <span
-              className={`text-xs font-medium ${getReasonColor(layer.reason)}`}
-            >
-              {layer.reason}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex gap-1 flex-shrink-0">
+          {/* 체크 버튼 */}
           <button
-            onClick={() => onDeleteLayer(layer.id)}
-            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-            title="삭제"
+            onClick={handleToggleSelection}
+            className={`p-1 rounded transition-colors ${
+              isSelected
+                ? "text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            }`}
+            title={isSelected ? "선택 해제" : "선택"}
           >
-            <LuTrash2 className="w-4 h-4" />
+            {isSelected ? (
+              <LuCheck className="w-4 h-4" />
+            ) : (
+              <LuSquare className="w-4 h-4" />
+            )}
           </button>
+
+          {/* 레이어 타입 아이콘 */}
+          <div className="flex-shrink-0">{getLayerTypeIcon(layer.type)}</div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-medium text-gray-900 truncate">
+                {layer.name}
+              </span>
+              <span className="text-xs text-gray-500 flex-shrink-0">
+                ({layer.type})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-1">
+              {getReasonIcon(layer.reason)}
+              <span
+                className={`text-xs font-medium ${getReasonColor(
+                  layer.reason
+                )}`}
+              >
+                {layer.reason}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-1 flex-shrink-0">
+            <button
+              onClick={() => onDeleteLayer(layer.id)}
+              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+              title="삭제"
+            >
+              <LuTrash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* 자식 노드들 - 구조 탭과 동일한 스타일 */}
+      {hasChildren && isExpanded && (
+        <div className="mt-2 border-gray-200">
+          <div className="bg-gray-50 border border-gray-300 rounded-lg p-3 space-y-1 shadow-sm">
+            <div className="text-xs text-gray-600 font-medium mb-2 pb-1 border-b border-gray-200">
+              자식 요소 ({layer.children?.length || 0}개)
+            </div>
+            {layer.children?.map((child: UnnecessaryLayer) => (
+              <SimplifyLayerItem
+                key={child.id}
+                layer={child}
+                isSelected={false} // 자식은 별도 선택 상태 관리
+                onToggleSelection={onToggleSelection}
+                onToggleVisibility={onToggleVisibility}
+                onDeleteLayer={onDeleteLayer}
+                onUpdateLayerVisibility={onUpdateLayerVisibility}
+                onAddAnnotation={onAddAnnotation}
+                hasChildren={child.children && child.children.length > 0}
+                isExpanded={false} // 자식은 기본적으로 접힌 상태
+                onToggleExpansion={onToggleExpansion}
+                depth={depth + 1}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
