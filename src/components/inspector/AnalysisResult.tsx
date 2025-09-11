@@ -21,6 +21,7 @@ interface AnalysisResultProps {
   onHandleKeyDown: (e: KeyboardEvent, nodeId: string) => void;
   onStartTextEditing: (nodeId: string, currentText: string) => void;
   onSaveTextChange: (nodeId: string) => void;
+  onToggleVisibility: (nodeId: string) => void;
 }
 
 export default function AnalysisResult({
@@ -36,6 +37,7 @@ export default function AnalysisResult({
   onHandleKeyDown,
   onStartTextEditing,
   onSaveTextChange,
+  onToggleVisibility,
 }: AnalysisResultProps) {
   return (
     <div className="mt-4">
@@ -76,6 +78,7 @@ export default function AnalysisResult({
               onHandleKeyDown={onHandleKeyDown}
               onStartTextEditing={onStartTextEditing}
               onSaveTextChange={onSaveTextChange}
+              onToggleVisibility={onToggleVisibility}
             />
           </div>
         </div>

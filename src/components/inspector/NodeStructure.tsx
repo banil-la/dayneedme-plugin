@@ -1,4 +1,5 @@
 import { h } from "preact";
+import { useEffect, useRef } from "preact/hooks";
 import {
   LuDiamond,
   LuSquare,
@@ -7,6 +8,8 @@ import {
   LuImage,
   LuLayers,
   LuFrame,
+  LuEye,
+  LuEyeOff,
 } from "react-icons/lu";
 
 // 노드 타입별 아이콘 매핑 함수
@@ -42,6 +45,7 @@ interface NodeStructureProps {
   onHandleKeyDown: (e: KeyboardEvent, nodeId: string) => void;
   onStartTextEditing: (nodeId: string, currentText: string) => void;
   onSaveTextChange: (nodeId: string) => void;
+  onToggleVisibility: (nodeId: string) => void;
 }
 
 export default function NodeStructure({
@@ -59,10 +63,27 @@ export default function NodeStructure({
   onHandleKeyDown,
   onStartTextEditing,
   onSaveTextChange,
+  onToggleVisibility,
 }: NodeStructureProps) {
   const hasChildren = node.children && node.children.length > 0;
   const isExpanded = isRoot || expandedNodes.has(node.id);
   const canToggle = hasChildren && !isRoot;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // 텍스트 편집 모드일 때 전체 텍스트 선택
+  useEffect(() => {
+    if (editingNodeId === `${node.id}_text` && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [editingNodeId, node.id]);
+
+  // 이름 편집 모드일 때 전체 텍스트 선택
+  useEffect(() => {
+    if (editingNodeId === node.id && nameInputRef.current) {
+      nameInputRef.current.select();
+    }
+  }, [editingNodeId, node.id]);
 
   return (
     <div key={node.id} className="mb-0.5">
@@ -91,6 +112,7 @@ export default function NodeStructure({
           {editingNodeId === node.id ? (
             <div className="flex items-center gap-2">
               <input
+                ref={nameInputRef}
                 type="text"
                 value={editingName}
                 onChange={(e) =>
@@ -98,6 +120,7 @@ export default function NodeStructure({
                 }
                 onKeyDown={(e) => onHandleKeyDown(e, node.id)}
                 onBlur={() => onCancelEditing()}
+                autoFocus
                 className="px-1.5 py-0.5 border border-blue-500 rounded text-xs font-bold outline-none"
               />
             </div>
@@ -127,6 +150,20 @@ export default function NodeStructure({
                   </strong>
                 </div>
               </div>
+              <button
+                className="p-1 text-gray-500 hover:text-gray-700 rounded transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleVisibility(node.id);
+                }}
+                title={node.visible ? "숨기기" : "보이기"}
+              >
+                {node.visible ? (
+                  <LuEye className="w-3 h-3" />
+                ) : (
+                  <LuEyeOff className="w-3 h-3" />
+                )}
+              </button>
             </div>
           )}
 
@@ -135,6 +172,7 @@ export default function NodeStructure({
             <div className="mt-1">
               {editingNodeId === `${node.id}_text` ? (
                 <input
+                  ref={inputRef}
                   type="text"
                   value={editingName}
                   onChange={(e) =>
@@ -148,6 +186,7 @@ export default function NodeStructure({
                     }
                   }}
                   onBlur={() => onCancelEditing()}
+                  autoFocus
                   className="px-1.5 py-0.5 border border-green-500 rounded text-xs font-bold outline-none w-full"
                   placeholder="텍스트 입력..."
                 />
@@ -185,6 +224,7 @@ export default function NodeStructure({
               onHandleKeyDown={onHandleKeyDown}
               onStartTextEditing={onStartTextEditing}
               onSaveTextChange={onSaveTextChange}
+              onToggleVisibility={onToggleVisibility}
             />
           ))}
         </div>

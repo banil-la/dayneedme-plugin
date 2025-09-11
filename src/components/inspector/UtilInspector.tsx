@@ -99,6 +99,11 @@ export default function UtilInspector() {
     cancelEditing();
   };
 
+  // 가시성 토글 핸들러
+  const handleToggleVisibility = (nodeId: string) => {
+    emit("TOGGLE_VISIBILITY", nodeId);
+  };
+
   // 3depth까지 자동으로 펼치는 함수
   const expandNodesToDepth = (
     node: any,
@@ -194,6 +199,32 @@ export default function UtilInspector() {
         }
       } else if (message.type === "CHANGE_TEXT_ERROR") {
         cancelEditing();
+      } else if (message.type === "TOGGLE_VISIBILITY_SUCCESS") {
+        // 로컬 상태에서 해당 노드의 가시성만 업데이트
+        const currentAnalysis = analysisRef.current;
+        if (currentAnalysis) {
+          const updateNodeVisibility = (node: any): any => {
+            if (node.id === message.data.nodeId) {
+              return { ...node, visible: message.data.visible };
+            }
+            if (node.children && node.children.length > 0) {
+              return {
+                ...node,
+                children: node.children.map(updateNodeVisibility),
+              };
+            }
+            return node;
+          };
+
+          const updatedAnalysis = {
+            ...currentAnalysis,
+            structure: updateNodeVisibility(currentAnalysis.structure),
+          };
+          setAnalysis(updatedAnalysis);
+        }
+      } else if (message.type === "TOGGLE_VISIBILITY_ERROR") {
+        // 에러 처리 (필요시 알림 표시)
+        console.error("Visibility toggle failed:", message.error);
       }
     };
 
@@ -238,6 +269,7 @@ export default function UtilInspector() {
           onHandleKeyDown={handleKeyDown}
           onStartTextEditing={startTextEditing}
           onSaveTextChange={saveTextChange}
+          onToggleVisibility={handleToggleVisibility}
         />
       )}
     </div>

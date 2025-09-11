@@ -17,6 +17,7 @@ import {
   handleComponentAnalysis,
   handleRenameNode,
   handleChangeText,
+  handleToggleVisibility,
 } from "./handlers/componentHandlers";
 import {
   handleExportImages,
@@ -199,6 +200,10 @@ export default function () {
       handleChangeText(nodeId, newText);
     }
   );
+  on("TOGGLE_VISIBILITY", (nodeId: string) => {
+    console.log("[main] TOGGLE_VISIBILITY event received:", nodeId);
+    handleToggleVisibility(nodeId);
+  });
   on("CLONE_COMPONENT", createComponentInstance);
   on("CHECK_SELECTION", () => checkSelection(currentMode));
 

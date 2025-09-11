@@ -340,6 +340,53 @@ export async function handleChangeText(nodeId: string, newText: string) {
   }
 }
 
+// 가시성 토글 함수
+export function handleToggleVisibility(nodeId: string) {
+  try {
+    console.log("[VISIBILITY] Starting visibility toggle:", nodeId);
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[VISIBILITY] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "TOGGLE_VISIBILITY_ERROR",
+        error: "노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    console.log("[VISIBILITY] Found node:", {
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      currentVisible: node.visible,
+    });
+
+    // 가시성 토글
+    node.visible = !node.visible;
+
+    console.log("[VISIBILITY] Visibility toggled successfully:", {
+      id: node.id,
+      newVisible: node.visible,
+    });
+
+    // UI로 성공 메시지 전송
+    figma.ui.postMessage({
+      type: "TOGGLE_VISIBILITY_SUCCESS",
+      data: {
+        nodeId: node.id,
+        visible: node.visible,
+      },
+    });
+  } catch (error) {
+    console.error("[VISIBILITY] Error toggling visibility:", error);
+    figma.ui.postMessage({
+      type: "TOGGLE_VISIBILITY_ERROR",
+      error: "가시성 변경에 실패했습니다.",
+    });
+  }
+}
+
 export function handleComponentAnalysis(componentId: string) {
   try {
     console.log("[ANALYZE] Starting component analysis for ID:", componentId);
