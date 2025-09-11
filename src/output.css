@@ -3785,6 +3785,10 @@ input.tab:checked + .tab-content,
   min-width: 2.25rem;
 }
 
+.min-w-0 {
+  min-width: 0px;
+}
+
 .max-w-full {
   max-width: 100%;
 }
@@ -3799,6 +3803,10 @@ input.tab:checked + .tab-content,
 
 .flex-none {
   flex: none;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
 }
 
 .shrink-0 {
@@ -3963,6 +3971,12 @@ input.tab:checked + .tab-content,
 
 .overflow-x-scroll {
   overflow-x: scroll;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .whitespace-pre-line {
@@ -4625,6 +4639,31 @@ input.tab:checked + .tab-content,
   color: rgb(21 128 61 / var(--tw-text-opacity, 1));
 }
 
+.text-cyan-500 {
+  --tw-text-opacity: 1;
+  color: rgb(6 182 212 / var(--tw-text-opacity, 1));
+}
+
+.text-emerald-500 {
+  --tw-text-opacity: 1;
+  color: rgb(16 185 129 / var(--tw-text-opacity, 1));
+}
+
+.text-indigo-500 {
+  --tw-text-opacity: 1;
+  color: rgb(99 102 241 / var(--tw-text-opacity, 1));
+}
+
+.text-pink-500 {
+  --tw-text-opacity: 1;
+  color: rgb(236 72 153 / var(--tw-text-opacity, 1));
+}
+
+.text-purple-500 {
+  --tw-text-opacity: 1;
+  color: rgb(168 85 247 / var(--tw-text-opacity, 1));
+}
+
 .text-opacity-30 {
   --tw-text-opacity: 0.3;
 }
@@ -4816,6 +4855,11 @@ input.tab:checked + .tab-content,
 .hover\:text-green-700:hover {
   --tw-text-opacity: 1;
   color: rgb(21 128 61 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-gray-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover {

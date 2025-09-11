@@ -664,3 +664,77 @@ export function handleDeleteLayer(nodeId: string) {
     });
   }
 }
+
+// Annotation 추가 함수 (Figma API 사용)
+export function handleAddAnnotation(nodeId: string, message: string) {
+  try {
+    console.log("[ANNOTATION] Starting annotation addition:", {
+      nodeId,
+      message,
+    });
+    const node = figma.getNodeById(nodeId) as any;
+
+    if (!node) {
+      console.error("[ANNOTATION] Node not found:", nodeId);
+      figma.ui.postMessage({
+        type: "ADD_ANNOTATION_ERROR",
+        error: "노드를 찾을 수 없습니다.",
+      });
+      return;
+    }
+
+    console.log("[ANNOTATION] Node found:", {
+      nodeId,
+      name: node.name,
+      type: node.type,
+    });
+
+    // 노드에 annotations 속성이 있는지 확인
+    if (!node.annotations) {
+      console.error("[ANNOTATION] Node does not support annotations:", nodeId);
+      figma.ui.postMessage({
+        type: "ADD_ANNOTATION_ERROR",
+        error: "이 노드 타입은 annotation을 지원하지 않습니다.",
+      });
+      return;
+    }
+
+    // 기존 annotations 가져오기
+    const existingAnnotations = node.annotations || [];
+
+    // 새로운 annotation 추가
+    const newAnnotation = {
+      label: message,
+    };
+
+    // 기존 annotations에 새로운 annotation 추가
+    node.annotations = [...existingAnnotations, newAnnotation];
+
+    console.log("[ANNOTATION] Annotation added successfully:", {
+      nodeId,
+      message,
+      totalAnnotations: node.annotations.length,
+    });
+
+    // 성공 메시지 전송
+    figma.ui.postMessage({
+      type: "ADD_ANNOTATION_SUCCESS",
+      data: {
+        nodeId,
+        message,
+        totalAnnotations: node.annotations.length,
+      },
+    });
+
+    // 사용자에게 알림
+    figma.notify(`"${node.name}"에 삭제 확인 주석이 추가되었습니다.`, {
+      timeout: 3000,
+    });
+  } catch (error) {
+    console.error("[ANNOTATION] Error adding annotation:", error);
+    figma.ui.postMessage({
+      type: "ADD_ANNOTATION_ERROR",
+      error: "주석 추가에 실패했습니다.",
+    });
+  }
+}

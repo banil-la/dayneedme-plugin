@@ -4,10 +4,10 @@ import {
   LuTrash2,
   LuEye,
   LuEyeOff,
-  LuTriangleAlert,
   LuCircleCheck,
   LuRefreshCw,
 } from "react-icons/lu";
+import SimplifyLayerItem from "./SimplifyLayerItem";
 
 interface UnnecessaryLayer {
   id: string;
@@ -18,6 +18,8 @@ interface UnnecessaryLayer {
   visible: boolean;
   locked: boolean;
   originalVisible: boolean; // 초기 분석 시점의 가시성 상태
+  children?: UnnecessaryLayer[]; // 자식 노드들
+  parentId?: string; // 부모 노드 ID
 }
 
 interface SimplifyViewProps {
@@ -25,6 +27,7 @@ interface SimplifyViewProps {
   onToggleVisibility: (nodeId: string) => void;
   onDeleteLayer: (nodeId: string) => void;
   onLayerCountChange?: (count: number) => void;
+  onAddAnnotation: (nodeId: string, message: string) => void;
 }
 
 export default function SimplifyView({
@@ -32,14 +35,16 @@ export default function SimplifyView({
   onToggleVisibility,
   onDeleteLayer,
   onLayerCountChange,
+  onAddAnnotation,
 }: SimplifyViewProps) {
   const [unnecessaryLayers, setUnnecessaryLayers] = useState<
     UnnecessaryLayer[]
   >([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedLayers, setSelectedLayers] = useState<Set<string>>(new Set());
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  // 불필요한 레이어 감지 함수 (초기 상태 기준으로 고정)
+  // 불필요한 레이어 감지 함수 (숨겨진 노드만 단순화 대상)
   const detectUnnecessaryLayers = (
     node: any,
     depth: number = 0
@@ -47,65 +52,39 @@ export default function SimplifyView({
     const layers: UnnecessaryLayer[] = [];
 
     const traverse = (currentNode: any, currentDepth: number) => {
-      // 숨겨진 레이어 (visible: false) - 초기 상태 기준
-      if (!currentNode.visible) {
-        layers.push({
-          id: currentNode.id,
-          name: currentNode.name,
-          type: currentNode.type,
-          reason: "숨겨진 레이어",
-          depth: currentDepth,
-          visible: currentNode.visible,
-          locked: currentNode.locked,
-          originalVisible: currentNode.visible, // 초기 상태 저장
-        });
-      }
+      const isCurrentNodeVisible = currentNode.visible;
+      const hasChildren =
+        currentNode.children && currentNode.children.length > 0;
 
-      // 빈 텍스트 레이어 (TEXT 타입이지만 내용이 비어있거나 공백만 있는 경우)
-      if (
-        currentNode.type === "TEXT" &&
-        (!currentNode.text || currentNode.text.trim() === "")
-      ) {
-        layers.push({
-          id: currentNode.id,
-          name: currentNode.name,
-          type: currentNode.type,
-          reason: "빈 텍스트 레이어",
-          depth: currentDepth,
-          visible: currentNode.visible,
-          locked: currentNode.locked,
-          originalVisible: currentNode.visible, // 초기 상태 저장
-        });
-      }
+      // 디버깅 로그 추가
+      console.log(`[SIMPLIFY] 노드 탐색:`, {
+        name: currentNode.name,
+        type: currentNode.type,
+        visible: isCurrentNodeVisible,
+        hasChildren: hasChildren,
+        depth: currentDepth,
+      });
 
-      // 크기가 0인 레이어 (width 또는 height가 0)
-      if (currentNode.width === 0 || currentNode.height === 0) {
-        layers.push({
-          id: currentNode.id,
-          name: currentNode.name,
-          type: currentNode.type,
-          reason: "크기가 0인 레이어",
-          depth: currentDepth,
-          visible: currentNode.visible,
-          locked: currentNode.locked,
-          originalVisible: currentNode.visible, // 초기 상태 저장
-        });
-      }
+      // 숨겨진 노드는 모두 단순화 대상 (부모-자식 관계와 무관하게)
+      if (!isCurrentNodeVisible) {
+        const reason = hasChildren ? "숨겨진 부모 노드" : "숨겨진 자식 노드";
 
-      // 자식이 없는 빈 컨테이너 (FRAME, GROUP 등)
-      if (
-        (currentNode.type === "FRAME" || currentNode.type === "GROUP") &&
-        (!currentNode.children || currentNode.children.length === 0)
-      ) {
+        console.log(`[SIMPLIFY] 숨겨진 노드 발견:`, {
+          name: currentNode.name,
+          type: currentNode.type,
+          reason: reason,
+          depth: currentDepth,
+        });
+
         layers.push({
           id: currentNode.id,
           name: currentNode.name,
           type: currentNode.type,
-          reason: "빈 컨테이너",
+          reason: reason,
           depth: currentDepth,
-          visible: currentNode.visible,
+          visible: isCurrentNodeVisible,
           locked: currentNode.locked,
-          originalVisible: currentNode.visible, // 초기 상태 저장
+          originalVisible: isCurrentNodeVisible,
         });
       }
 
@@ -117,8 +96,180 @@ export default function SimplifyView({
       }
     };
 
+    console.log(`[SIMPLIFY] 분석 시작 - 루트 노드:`, {
+      name: node.name,
+      type: node.type,
+      visible: node.visible,
+    });
+
     traverse(node, depth);
+
+    console.log(`[SIMPLIFY] 분석 완료 - 발견된 숨겨진 노드 수:`, layers.length);
+    console.log(
+      `[SIMPLIFY] 발견된 노드들:`,
+      layers.map((l) => ({ name: l.name, type: l.type, reason: l.reason }))
+    );
+
+    // 각 노드의 상세 정보도 출력
+    layers.forEach((layer, index) => {
+      console.log(`[SIMPLIFY] 노드 ${index + 1}:`, {
+        id: layer.id,
+        name: layer.name,
+        type: layer.type,
+        reason: layer.reason,
+        depth: layer.depth,
+        visible: layer.visible,
+      });
+    });
+
     return layers;
+  };
+
+  // 불필요한 레이어들을 계층적 구조로 재구성
+  const buildHierarchicalStructure = (
+    layers: UnnecessaryLayer[],
+    rootNode: any
+  ): UnnecessaryLayer[] => {
+    console.log(
+      `[SIMPLIFY] buildHierarchicalStructure 시작 - 입력 레이어 수:`,
+      layers.length
+    );
+    console.log(`[SIMPLIFY] 루트 노드:`, {
+      name: rootNode.name,
+      type: rootNode.type,
+      id: rootNode.id,
+    });
+
+    // 트리에서 특정 ID의 노드를 찾는 헬퍼 함수
+    const findNodeInTree = (node: any, targetId: string): any => {
+      if (node.id === targetId) {
+        return node;
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findNodeInTree(child, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    // 처리된 노드들을 마킹하는 헬퍼 함수
+    const markProcessedNodes = (
+      layer: UnnecessaryLayer,
+      processedSet: Set<string>
+    ) => {
+      processedSet.add(layer.id);
+      if (layer.children) {
+        layer.children.forEach((child) =>
+          markProcessedNodes(child, processedSet)
+        );
+      }
+    };
+
+    const unnecessaryLayerMap = new Map<string, UnnecessaryLayer>();
+    const rootLayers: UnnecessaryLayer[] = [];
+
+    // 불필요한 레이어들을 맵에 저장
+    layers.forEach((layer) => {
+      unnecessaryLayerMap.set(layer.id, { ...layer, children: [] });
+    });
+
+    console.log(
+      `[SIMPLIFY] 맵에 저장된 레이어 ID들:`,
+      Array.from(unnecessaryLayerMap.keys())
+    );
+
+    // 단순화 대상 노드만 계층적으로 구성
+    const buildHierarchy = (
+      node: any,
+      parentId?: string
+    ): UnnecessaryLayer | null => {
+      const isUnnecessary = unnecessaryLayerMap.has(node.id);
+
+      console.log(`[SIMPLIFY] buildHierarchy - 노드 확인:`, {
+        name: node.name,
+        id: node.id,
+        isUnnecessary: isUnnecessary,
+        parentId: parentId,
+      });
+
+      if (isUnnecessary) {
+        const layer = unnecessaryLayerMap.get(node.id)!;
+        layer.parentId = parentId;
+        layer.children = [];
+
+        console.log(`[SIMPLIFY] 불필요한 노드 발견 - 계층 구조 생성:`, {
+          name: layer.name,
+          id: layer.id,
+          parentId: parentId,
+        });
+
+        // 자식 노드들 중에서 단순화 대상인 것들만 처리
+        if (node.children) {
+          node.children.forEach((child: any) => {
+            const childLayer = buildHierarchy(child, node.id);
+            if (childLayer) {
+              layer.children!.push(childLayer);
+              console.log(`[SIMPLIFY] 자식 노드 추가:`, {
+                parent: layer.name,
+                child: childLayer.name,
+              });
+            }
+          });
+        }
+
+        return layer;
+      }
+
+      return null;
+    };
+
+    // 모든 불필요한 노드들을 부모-자식 관계에 따라 계층 구조로 구성
+    const processedNodes = new Set<string>();
+
+    // 1단계: 부모 노드들부터 처리 (자식이 있는 숨겨진 노드들)
+    layers.forEach((layer) => {
+      if (!processedNodes.has(layer.id)) {
+        const nodeInTree = findNodeInTree(rootNode, layer.id);
+        if (nodeInTree) {
+          const hierarchicalLayer = buildHierarchy(nodeInTree);
+          if (hierarchicalLayer) {
+            rootLayers.push(hierarchicalLayer);
+            console.log(
+              `[SIMPLIFY] 부모 노드 계층 구조 추가:`,
+              hierarchicalLayer.name
+            );
+
+            // 처리된 노드들 마킹
+            markProcessedNodes(hierarchicalLayer, processedNodes);
+          }
+        }
+      }
+    });
+
+    // 2단계: 아직 처리되지 않은 개별 노드들 추가 (자식이 없는 숨겨진 노드들)
+    layers.forEach((layer) => {
+      if (!processedNodes.has(layer.id)) {
+        rootLayers.push(layer);
+        console.log(`[SIMPLIFY] 개별 노드 추가:`, layer.name);
+        processedNodes.add(layer.id);
+      }
+    });
+
+    console.log(
+      `[SIMPLIFY] buildHierarchicalStructure 완료 - 결과 레이어 수:`,
+      rootLayers.length
+    );
+    console.log(
+      `[SIMPLIFY] 최종 결과:`,
+      rootLayers.map((l) => ({
+        name: l.name,
+        children: l.children?.length || 0,
+      }))
+    );
+
+    return rootLayers;
   };
 
   // 수동 분석 시작 (컴포넌트가 변경되었을 때만)
@@ -130,12 +281,16 @@ export default function SimplifyView({
 
     // 실제로는 비동기로 처리하지만, 여기서는 즉시 결과 반환
     setTimeout(() => {
-      const layers = detectUnnecessaryLayers(analysis.structure);
-      setUnnecessaryLayers(layers);
+      const flatLayers = detectUnnecessaryLayers(analysis.structure);
+      const hierarchicalLayers = buildHierarchicalStructure(
+        flatLayers,
+        analysis.structure
+      );
+      setUnnecessaryLayers(hierarchicalLayers);
       setIsAnalyzing(false);
       // 부모에게 레이어 개수 전달
       if (onLayerCountChange) {
-        onLayerCountChange(layers.length);
+        onLayerCountChange(flatLayers.length);
       }
     }, 500);
   };
@@ -143,12 +298,17 @@ export default function SimplifyView({
   // 분석 결과가 변경될 때만 불필요한 레이어 감지 (한 번만 실행)
   useEffect(() => {
     if (analysis && analysis.structure) {
-      const layers = detectUnnecessaryLayers(analysis.structure);
-      setUnnecessaryLayers(layers);
+      const flatLayers = detectUnnecessaryLayers(analysis.structure);
+      const hierarchicalLayers = buildHierarchicalStructure(
+        flatLayers,
+        analysis.structure
+      );
+      setUnnecessaryLayers(hierarchicalLayers);
       setSelectedLayers(new Set());
+      setExpandedNodes(new Set()); // 확장 상태 초기화
       // 부모에게 레이어 개수 전달
       if (onLayerCountChange) {
-        onLayerCountChange(layers.length);
+        onLayerCountChange(flatLayers.length);
       }
     }
   }, [analysis?.component?.id, onLayerCountChange]); // component.id가 변경될 때만 실행
@@ -173,11 +333,33 @@ export default function SimplifyView({
 
   // 전체 선택/해제
   const toggleAllSelection = () => {
-    if (selectedLayers.size === unnecessaryLayers.length) {
+    const allLayerIds = new Set<string>();
+    const collectAllIds = (layers: UnnecessaryLayer[]) => {
+      layers.forEach((layer) => {
+        allLayerIds.add(layer.id);
+        if (layer.children) {
+          collectAllIds(layer.children);
+        }
+      });
+    };
+    collectAllIds(unnecessaryLayers);
+
+    if (selectedLayers.size === allLayerIds.size) {
       setSelectedLayers(new Set());
     } else {
-      setSelectedLayers(new Set(unnecessaryLayers.map((layer) => layer.id)));
+      setSelectedLayers(allLayerIds);
     }
+  };
+
+  // 노드 펼치기/접기
+  const toggleNodeExpansion = (nodeId: string) => {
+    const newExpanded = new Set(expandedNodes);
+    if (newExpanded.has(nodeId)) {
+      newExpanded.delete(nodeId);
+    } else {
+      newExpanded.add(nodeId);
+    }
+    setExpandedNodes(newExpanded);
   };
 
   // 선택된 레이어들 정리
@@ -192,64 +374,45 @@ export default function SimplifyView({
     );
   };
 
-  // 선택된 레이어들 일괄 숨김 해제
-  const showSelectedLayers = () => {
-    selectedLayers.forEach((layerId) => {
-      onToggleVisibility(layerId);
-      // 로컬 상태에서 가시성만 업데이트 (레이어 목록은 유지)
-      setUnnecessaryLayers((prev) =>
-        prev.map((layer) =>
-          layer.id === layerId ? { ...layer, visible: true } : layer
-        )
+  // 계층적 구조 렌더링
+  const renderHierarchicalLayers = (
+    layers: UnnecessaryLayer[],
+    depth: number = 0
+  ): any[] => {
+    const result: any[] = [];
+
+    layers.forEach((layer) => {
+      const hasChildren = layer.children && layer.children.length > 0;
+      const isExpanded = expandedNodes.has(layer.id);
+
+      result.push(
+        <SimplifyLayerItem
+          key={layer.id}
+          layer={layer}
+          isSelected={selectedLayers.has(layer.id)}
+          onToggleSelection={toggleLayerSelection}
+          onToggleVisibility={onToggleVisibility}
+          onDeleteLayer={onDeleteLayer}
+          onUpdateLayerVisibility={(layerId, visible) => {
+            setUnnecessaryLayers((prev) =>
+              prev.map((l) => (l.id === layerId ? { ...l, visible } : l))
+            );
+          }}
+          onAddAnnotation={onAddAnnotation}
+          hasChildren={hasChildren}
+          isExpanded={isExpanded}
+          onToggleExpansion={toggleNodeExpansion}
+          depth={depth}
+        />
       );
+
+      // 자식 노드들 렌더링 (확장된 경우에만)
+      if (hasChildren && isExpanded) {
+        result.push(...renderHierarchicalLayers(layer.children!, depth + 1));
+      }
     });
-    setSelectedLayers(new Set());
-  };
 
-  // 선택된 레이어들 일괄 숨김
-  const hideSelectedLayers = () => {
-    selectedLayers.forEach((layerId) => {
-      onToggleVisibility(layerId);
-      // 로컬 상태에서 가시성만 업데이트 (레이어 목록은 유지)
-      setUnnecessaryLayers((prev) =>
-        prev.map((layer) =>
-          layer.id === layerId ? { ...layer, visible: false } : layer
-        )
-      );
-    });
-    setSelectedLayers(new Set());
-  };
-
-  // 이유별 아이콘
-  const getReasonIcon = (reason: string) => {
-    switch (reason) {
-      case "숨겨진 레이어":
-        return <LuEyeOff className="w-4 h-4 text-gray-500" />;
-      case "빈 텍스트 레이어":
-        return <LuTriangleAlert className="w-4 h-4 text-yellow-500" />;
-      case "크기가 0인 레이어":
-        return <LuTriangleAlert className="w-4 h-4 text-red-500" />;
-      case "빈 컨테이너":
-        return <LuTriangleAlert className="w-4 h-4 text-orange-500" />;
-      default:
-        return <LuTriangleAlert className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  // 이유별 색상
-  const getReasonColor = (reason: string) => {
-    switch (reason) {
-      case "숨겨진 레이어":
-        return "text-gray-600";
-      case "빈 텍스트 레이어":
-        return "text-yellow-600";
-      case "크기가 0인 레이어":
-        return "text-red-600";
-      case "빈 컨테이너":
-        return "text-orange-600";
-      default:
-        return "text-gray-600";
-    }
+    return result;
   };
 
   return (
@@ -285,20 +448,6 @@ export default function SimplifyView({
             {selectedLayers.size > 0 && (
               <div className="flex items-center gap-1">
                 <button
-                  onClick={showSelectedLayers}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                >
-                  <LuEye className="w-3 h-3" />
-                  숨김 해제 ({selectedLayers.size}개)
-                </button>
-                <button
-                  onClick={hideSelectedLayers}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
-                >
-                  <LuEyeOff className="w-3 h-3" />
-                  숨김 ({selectedLayers.size}개)
-                </button>
-                <button
                   onClick={cleanupSelectedLayers}
                   className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                 >
@@ -324,82 +473,8 @@ export default function SimplifyView({
           <span className="text-sm">정리할 불필요한 레이어가 없습니다!</span>
         </div>
       ) : (
-        <div className="space-y-2">
-          {unnecessaryLayers.map((layer) => (
-            <div
-              key={layer.id}
-              className={`p-3 border rounded-lg ${
-                selectedLayers.has(layer.id)
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={selectedLayers.has(layer.id)}
-                  onChange={() => toggleLayerSelection(layer.id)}
-                  className="rounded"
-                />
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    {getReasonIcon(layer.reason)}
-                    <span className="text-sm font-medium text-gray-900">
-                      {layer.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      ({layer.type})
-                    </span>
-                    <span
-                      className={`text-xs font-medium ${getReasonColor(
-                        layer.reason
-                      )}`}
-                    >
-                      {layer.reason}
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    깊이: {layer.depth} •{layer.visible ? " 보임" : " 숨김"} •
-                    {layer.locked ? " 잠김" : " 잠금 해제"}
-                  </div>
-                </div>
-
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => {
-                      onToggleVisibility(layer.id);
-                      // 로컬 상태에서 가시성만 업데이트 (레이어 목록은 유지)
-                      setUnnecessaryLayers((prev) =>
-                        prev.map((l) =>
-                          l.id === layer.id ? { ...l, visible: !l.visible } : l
-                        )
-                      );
-                    }}
-                    className={`p-1 rounded transition-colors ${
-                      layer.visible
-                        ? "text-green-600 hover:text-green-700 hover:bg-green-50"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                    }`}
-                    title={layer.visible ? "숨기기" : "보이기"}
-                  >
-                    {layer.visible ? (
-                      <LuEye className="w-4 h-4" />
-                    ) : (
-                      <LuEyeOff className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => onDeleteLayer(layer.id)}
-                    className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                    title="삭제"
-                  >
-                    <LuTrash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="space-y-1">
+          {renderHierarchicalLayers(unnecessaryLayers)}
         </div>
       )}
     </div>

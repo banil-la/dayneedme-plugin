@@ -20,6 +20,7 @@ import {
   handleToggleVisibility,
   handleToggleLock,
   handleDeleteLayer,
+  handleAddAnnotation,
 } from "./handlers/componentHandlers";
 import {
   handleExportImages,
@@ -214,6 +215,13 @@ export default function () {
     console.log("[main] DELETE_LAYER event received:", nodeId);
     handleDeleteLayer(nodeId);
   });
+  on(
+    "ADD_ANNOTATION",
+    ({ nodeId, message }: { nodeId: string; message: string }) => {
+      console.log("[main] ADD_ANNOTATION event received:", { nodeId, message });
+      handleAddAnnotation(nodeId, message);
+    }
+  );
   on("CLONE_COMPONENT", createComponentInstance);
   on("CHECK_SELECTION", () => checkSelection(currentMode));
 

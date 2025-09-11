@@ -140,6 +140,11 @@ export default function UtilInspector() {
     emit("TOGGLE_LOCK", nodeId);
   };
 
+  // Annotation 추가 핸들러
+  const handleAddAnnotation = (nodeId: string, message: string) => {
+    emit("ADD_ANNOTATION", { nodeId, message });
+  };
+
   // 텍스트 레이어만 추출하는 함수
   const extractTextLayers = (node: any): any[] => {
     const textLayers: any[] = [];
@@ -457,6 +462,7 @@ export default function UtilInspector() {
                 emit("DELETE_LAYER", nodeId);
               }}
               onLayerCountChange={setUnnecessaryLayerCount}
+              onAddAnnotation={handleAddAnnotation}
             />
           )}
         </div>

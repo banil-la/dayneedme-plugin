@@ -12,6 +12,7 @@ inspector/
 ├── NodeStructure.tsx         # 노드 구조 트리 표시 (Dumb Component)
 ├── TextLayersView.tsx        # 텍스트 레이어 전용 뷰 (Dumb Component)
 ├── SimplifyView.tsx          # 불필요한 레이어 정리 뷰 (Dumb Component)
+├── SimplifyLayerItem.tsx     # 단순화 레이어 아이템 (Dumb Component)
 └── EditableText.tsx          # 공통 편집 컴포넌트 (Dumb Component)
 ```
 
@@ -212,6 +213,34 @@ componentHandlers.ts → postMessage("RENAME_NODE_SUCCESS"/"CHANGE_TEXT_SUCCESS"
 2. **빈 텍스트 레이어**: TEXT 타입이지만 내용이 비어있거나 공백만 있는 경우
 3. **크기가 0인 레이어**: width 또는 height가 0인 레이어
 4. **빈 컨테이너**: FRAME, GROUP 타입이지만 자식이 없는 경우
+
+### SimplifyLayerItem.tsx (단순화 레이어 아이템)
+
+**역할**: 개별 불필요한 레이어를 표시하고 관리하는 컴포넌트
+
+**주요 기능**:
+
+- **레이어 정보 표시**: 이름, 타입, 이유, 깊이, 가시성, 잠금 상태
+- **선택 관리**: 체크박스를 통한 개별 선택/해제
+- **가시성 토글**: 눈 아이콘을 통한 숨김/보이기 토글
+- **삭제 기능**: 휴지통 아이콘을 통한 레이어 삭제
+- **이유별 아이콘**: 각 불필요한 이유에 따른 시각적 구분
+
+**Props**:
+
+- `layer`: 불필요한 레이어 데이터
+- `isSelected`: 선택 상태
+- `onToggleSelection`: 선택 토글 콜백
+- `onToggleVisibility`: 가시성 토글 콜백
+- `onDeleteLayer`: 레이어 삭제 콜백
+- `onUpdateLayerVisibility`: 레이어 가시성 업데이트 콜백
+
+**시각적 구분**:
+
+- **숨겨진 레이어**: 회색 눈 아이콘
+- **빈 텍스트 레이어**: 노란색 경고 아이콘
+- **크기가 0인 레이어**: 빨간색 경고 아이콘
+- **빈 컨테이너**: 주황색 경고 아이콘
 
 ### EditableText.tsx (공통 편집 컴포넌트)
 
